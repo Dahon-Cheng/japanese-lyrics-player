@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.1</title>
+<title>日文同步歌詞 V1.2</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.1</h1>
+<h1>日文同步歌詞播放器 V1.2</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -92,7 +92,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-let songs=JSON.parse(localStorage.getItem('jpSongsV1')||'[]'),current=null,player=null,timingMode=false,markIndex=0,syncTimer=null;
+let songs=JSON.parse(localStorage.getItem('jpSongsV1')||'[]'),current=null,player=null,timingMode=false,markIndex=0,syncTimer=null,activePlayLine=null;
 const $=id=>document.getElementById(id);
 const save=()=>localStorage.setItem('jpSongsV1',JSON.stringify(songs));
 const uid=()=> 'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -137,18 +137,49 @@ function renderLines(){
  <div class="editline"><button class="secondary" onclick="event.stopPropagation();editReading(${i})">讀音</button><button class="secondary" onclick="event.stopPropagation();mergeNext(${i})" ${i>=current.lines.length-1?'disabled':''}>與下一句合併</button><button class="secondary" onclick="event.stopPropagation();splitLine(${i})">拆分</button></div>
  ${l.startTime!=null?fineButtons(i):''}</div>`).join('')
 }
-function fineButtons(i){return `<div class="fine"><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},-.5)">−0.5</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},-.1)">−0.1</button><button class="secondary" onclick="event.stopPropagation();seekLine(${i})">▶</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},.1)">+0.1</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},.5)">+0.5</button></div>`}
+function fineButtons(i){return `<div class="fine"><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},-.5)">−0.5</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},-.1)">−0.1</button><button class="secondary linePlayBtn" id="linePlay${i}" onclick="event.stopPropagation();toggleLinePlayback(${i})">▶</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},.1)">+0.1</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},.5)">+0.5</button></div>`}
 function renderText(l){let t=l.tokens?.[0];if(t?.override)return `<ruby>${esc(l.text)}<rt>${esc(t.override)}</rt></ruby>`;return esc(l.text)}
 
 function editReading(i){let l=current.lines[i],v=prompt('輸入這一句要顯示在上方的平假名讀音。\\n留空可移除。',l.tokens?.[0]?.override||'');if(v===null)return;l.tokens=[{tokenId:'T1',text:l.text,reading:null,override:v.trim()||null}];save();renderLines();renderFine()}
-function seekLine(i){let t=current.lines[i].startTime;if(t!=null&&player?.seekTo){player.seekTo(Math.max(0,t),true);player.playVideo();updatePauseButton()}}
+function seekLine(i){let t=current.lines[i].startTime;if(t!=null&&player?.seekTo){activePlayLine=i;player.seekTo(Math.max(0,t),true);player.playVideo();updatePauseButton()}}
 
+
+function toggleLinePlayback(i){
+ if(!player||!current?.lines?.[i])return;
+ let t=current.lines[i].startTime;
+ if(t==null)return;
+ let state=player.getPlayerState?.();
+ if(activePlayLine===i && state===1){
+   player.pauseVideo();
+   updatePauseButton();
+   updateLinePlayButtons();
+   return;
+ }
+ if(activePlayLine===i && state===2){
+   player.playVideo();
+   updatePauseButton();
+   updateLinePlayButtons();
+   return;
+ }
+ activePlayLine=i;
+ player.seekTo(Math.max(0,t),true);
+ player.playVideo();
+ updatePauseButton();
+ setTimeout(updateLinePlayButtons,80);
+}
+function updateLinePlayButtons(){
+ document.querySelectorAll('.linePlayBtn').forEach(b=>b.textContent='▶');
+ if(activePlayLine==null||!player?.getPlayerState)return;
+ let b=$('linePlay'+activePlayLine);
+ if(b)b.textContent=player.getPlayerState()===1?'❚❚':'▶';
+}
 function toggleTiming(){timingMode=!timingMode;$('timing').classList.toggle('hidden',!timingMode);document.body.classList.toggle('timing-on',timingMode);$('lines').classList.toggle('hidden',timingMode);status()}
 function markNext(){if(!player?.getCurrentTime||markIndex>=current.lines.length)return;current.lines[markIndex].startTime=+player.getCurrentTime().toFixed(2);markIndex++;save();renderLines();status()}
 function undoMark(){if(!current||!current.lines.length)return;if(markIndex<=0&&current.lines[0].startTime==null)return;let i=Math.min(markIndex-1,current.lines.length-1);if(i<0)return;current.lines[i].startTime=null;markIndex=i;save();renderLines();status()}
 
 function replayPrevious(){
  if(!current||!player?.seekTo)return;
+ activePlayLine=null;
  let i=Math.max(0,Math.min(markIndex-1,current.lines.length-1)),t=current.lines[i]?.startTime;
  if(t==null){
    for(let j=i;j>=0;j--){if(current.lines[j].startTime!=null){t=current.lines[j].startTime;break}}
@@ -163,8 +194,8 @@ function togglePlayPause(){
  setTimeout(updatePauseButton,100)
 }
 function updatePauseButton(){
- let b=$('pauseBtn');if(!b||!player?.getPlayerState)return;
- b.textContent=player.getPlayerState()===1?'❚❚ 暫停':'▶ 繼續播放'
+ let b=$('pauseBtn');if(b&&player?.getPlayerState)b.textContent=player.getPlayerState()===1?'❚❚ 暫停':'▶ 繼續播放';
+ updateLinePlayButtons();
 }
 
 function mergeNext(i){
@@ -201,7 +232,7 @@ function status(){
 }
 function renderFine(){
  if(!current)return;
- $('fineLines').innerHTML=current.lines.map((l,i)=>`<div class="line"><span class="muted time">${l.startTime==null?'--:--':fmt(l.startTime)}</span> ${renderText(l)}${l.startTime!=null?fineButtons(i):''}<div class="editline"><button class="secondary" onclick="mergeNext(${i})" ${i>=current.lines.length-1?'disabled':''}>與下一句合併</button><button class="secondary" onclick="splitLine(${i})">拆分</button></div></div>`).join('')
+ $('fineLines').innerHTML=current.lines.map((l,i)=>`<div class="line"><span class="muted time">${l.startTime==null?'--:--':fmt(l.startTime)}</span> ${renderText(l)}${l.startTime!=null?fineButtons(i):''}<div class="editline"><button class="secondary" onclick="mergeNext(${i})" ${i>=current.lines.length-1?'disabled':''}>與下一句合併</button><button class="secondary" onclick="splitLine(${i})">拆分</button></div></div>`).join(''); updateLinePlayButtons()
 }
 function shiftLine(i,d){let l=current?.lines?.[i];if(!l||l.startTime==null)return;l.startTime=Math.max(0,+(l.startTime+d).toFixed(2));save();renderLines();renderFine();status()}
 function shiftAll(d){if(!current)return;current.lines.forEach(l=>{if(l.startTime!=null)l.startTime=Math.max(0,+(l.startTime+d).toFixed(2))});save();renderLines();renderFine()}

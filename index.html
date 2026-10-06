@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.3</title>
+<title>日文同步歌詞 V1.4</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.3</h1>
+<h1>日文同步歌詞播放器 V1.4</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -51,7 +51,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 <div id="play" class="hidden">
  <div class="toolbar row">
   <button class="secondary" onclick="showHome()">← 歌曲庫</button>
-  <button onclick="toggleTiming()">對時模式</button>
+  <button onclick="toggleTiming()">半自動對時</button>
   <button class="secondary" onclick="shiftAll(-.1)">整首 −0.1s</button>
   <button class="secondary" onclick="shiftAll(.1)">整首 +0.1s</button>
   <button class="secondary" onclick="editCurrent()">編輯歌曲</button>
@@ -248,9 +248,13 @@ renderSongs();
 
 <style>
 .split-panel{margin-top:10px;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa}.split-text{font-size:22px;line-height:2.2;word-break:break-all}.split-cut{padding:0 3px;margin:0 1px;min-height:auto;background:#dfe4ea;color:#555;border-radius:4px;font-size:18px}.target-badge{font-size:12px;background:#222;color:#fff;border-radius:999px;padding:3px 8px;margin-left:6px}
+.inline-maint{margin:10px 0 4px;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa}
+.inline-maint .split-text{font-size:22px;line-height:2.2;word-break:break-all}
+.inline-retime{margin-top:9px;padding:10px;border-left:3px solid #888;background:#f7f7f7;border-radius:8px}
+.inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V1.3 usability patch */
+/* V1.4 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -269,6 +273,134 @@ toggleLinePlayback=function(i){if(!player||!current?.lines?.[i]||current.lines[i
 let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLine===i&&player&&current.lines[i].startTime!=null){player.seekTo(current.lines[i].startTime,true);player.playVideo()}};
 /* Simplify timing controls and add split panel. */
 (function(){let actions=document.querySelector('.timing-actions .row');if(actions)actions.innerHTML='<button class="secondary" id="pauseBtn" onclick="timingPlayPause()">▶ 播放</button><button id="markBtn" onclick="markTarget()">記錄這一句</button>';let ce=$('currentEdit');if(ce&&!$('splitPanel'))ce.insertAdjacentHTML('afterend','<div id="splitPanel" class="split-panel hidden"></div>');updatePauseButton()})();
+</script>
+
+
+<script>
+/* V1.4: first-pass semi-auto timing is separate from completed-song maintenance. */
+let maintenanceIndex=null;
+
+function ensureMaintenanceHost(i){
+  let line=document.getElementById('line'+i);
+  if(!line)return null;
+  let host=line.querySelector('.inline-maint');
+  if(!host){
+    host=document.createElement('div');
+    host.className='inline-maint';
+    host.onclick=e=>e.stopPropagation();
+    line.appendChild(host);
+  }
+  return host;
+}
+function closeInlineMaintenance(i=null){
+  document.querySelectorAll('#lines .inline-maint').forEach(x=>x.remove());
+  if(i===null||maintenanceIndex===i)maintenanceIndex=null;
+}
+function openSplitInline(i){
+  if(i<0||i>=current.lines.length)return;
+  closeInlineMaintenance();
+  maintenanceIndex=i;
+  let chars=Array.from(current.lines[i].text);
+  if(chars.length<2){alert('這一句太短，無法拆分');return}
+  let host=ensureMaintenanceHost(i);
+  let h='<div class="muted">直接點選要拆開的位置：</div><div class="split-text">';
+  chars.forEach((ch,k)=>{
+    h+=`<span>${esc(ch)}</span>`;
+    if(k<chars.length-1)h+=`<button class="split-cut" onclick="confirmSplitInline(${i},${k+1})">│</button>`;
+  });
+  h+='</div><div class="row"><button class="secondary" onclick="closeInlineMaintenance()">取消</button></div>';
+  host.innerHTML=h;
+}
+function confirmSplitInline(i,pos){
+  let l=current.lines[i],c=Array.from(l.text),a=c.slice(0,pos).join('').trim(),b=c.slice(pos).join('').trim();
+  if(!a||!b)return;
+  l.text=a;l.tokens=[{tokenId:'T1',text:a,reading:null,override:null}];
+  current.lines.splice(i+1,0,{lineId:uid(),text:b,startTime:null,tokens:[{tokenId:'T1',text:b,reading:null,override:null}]});
+  save();recalcMarkIndex();maintenanceIndex=null;renderLines();
+}
+function openRetimeInline(i){
+  if(i<0||i>=current.lines.length)return;
+  closeInlineMaintenance();
+  maintenanceIndex=i;
+  let host=ensureMaintenanceHost(i), l=current.lines[i];
+  host.innerHTML=`<div class="inline-retime"><b>${l.startTime==null?'設定這一句時間':'重新對時這一句'}</b>
+    <div class="muted" style="margin:5px 0">播放會從上一個已有時間戳的句子開始；只會修改目前這一句。</div>
+    <div class="row">
+      <button class="secondary" id="inlinePlayBtn" onclick="inlineRetimePlay(${i})">▶ 播放</button>
+      <button onclick="inlineRetimeMark(${i})">記錄此句</button>
+      <button class="secondary" onclick="closeInlineMaintenance()">取消</button>
+    </div></div>`;
+}
+function previousTimedStart(i){
+  for(let j=i-1;j>=0;j--)if(current.lines[j].startTime!=null)return current.lines[j].startTime;
+  return 0;
+}
+function inlineRetimePlay(i){
+  if(!player)return;
+  let st=player.getPlayerState?.(), b=document.getElementById('inlinePlayBtn');
+  if(st===1 && maintenanceIndex===i){
+    player.pauseVideo(); if(b)b.textContent='▶ 播放'; return;
+  }
+  activePlayLine=null;
+  player.seekTo(Math.max(0,previousTimedStart(i)),true);
+  player.playVideo();
+  if(b)b.textContent='❚❚ 暫停';
+}
+function inlineRetimeMark(i){
+  if(!player?.getCurrentTime||!current?.lines?.[i])return;
+  current.lines[i].startTime=+player.getCurrentTime().toFixed(2);
+  save();maintenanceIndex=null;renderLines();
+}
+function selectRetime(i){ openRetimeInline(i); }
+
+/* Split is maintenance too: always open directly under the selected lyric line. */
+function openSplit(i){ openSplitInline(i); }
+
+/* Rebuild normal lyric controls after every render. */
+let _v14RenderLines=renderLines;
+renderLines=function(){
+  _v14RenderLines();
+  document.querySelectorAll('#lines .line').forEach((el,i)=>{
+    let row=el.querySelector('.editline');
+    if(!row)return;
+    let ret=row.querySelector('.retimeBtn');
+    if(ret){
+      ret.textContent=current.lines[i].startTime==null?'設定時間':'重新對時';
+      ret.onclick=e=>{e.stopPropagation();openRetimeInline(i)};
+    }
+    row.querySelectorAll('button').forEach(b=>{
+      if(b.textContent==='拆分')b.onclick=e=>{e.stopPropagation();openSplitInline(i)};
+    });
+  });
+};
+
+/* Semi-auto timing is first-pass only. It always starts at the first untimed line.
+   Completed-song single-line maintenance never enters this view. */
+let _v14ToggleTiming=toggleTiming;
+toggleTiming=function(){
+  if(!timingMode){
+    let firstUntimed=current?.lines?.findIndex(x=>x.startTime==null) ?? -1;
+    if(firstUntimed<0){
+      alert('這首歌已完成首次對時。\n要修改單一句，請直接在歌詞頁使用「重新對時」、「拆分」或時間微調。');
+      return;
+    }
+    targetIndex=firstUntimed;
+  }
+  _v14ToggleTiming();
+  if(timingMode){targetIndex=current.lines.findIndex(x=>x.startTime==null);status()}
+};
+
+/* In semi-auto mode, splitting still stays inside that mode; normal-page split uses inline editor. */
+let _v14Status=status;
+status=function(){
+  _v14Status();
+  if(timingMode){
+    let btns=document.querySelectorAll('#currentEdit button');
+    btns.forEach(b=>{
+      if(b.textContent.includes('拆分')) b.onclick=()=>openSplit(targetIndex);
+    });
+  }
+};
 </script>
 
 </body></html>

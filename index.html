@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.2</title>
+<title>日文同步歌詞 V1.3</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.2</h1>
+<h1>日文同步歌詞播放器 V1.3</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -245,4 +245,30 @@ function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 window.onYouTubeIframeAPIReady=()=>{};
 renderSongs();
 </script>
+
+<style>
+.split-panel{margin-top:10px;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa}.split-text{font-size:22px;line-height:2.2;word-break:break-all}.split-cut{padding:0 3px;margin:0 1px;min-height:auto;background:#dfe4ea;color:#555;border-radius:4px;font-size:18px}.target-badge{font-size:12px;background:#222;color:#fff;border-radius:999px;padding:3px 8px;margin-left:6px}
+</style>
+<script>
+/* V1.3 usability patch */
+let targetIndex=0, splitIndex=null;
+function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
+saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
+function closeSplit(){splitIndex=null;let p=$('splitPanel');if(p){p.classList.add('hidden');p.innerHTML=''}}
+function openSplit(i){if(i<0||i>=current.lines.length)return;splitIndex=i;let chars=Array.from(current.lines[i].text);if(chars.length<2){alert('這一句太短，無法拆分');return}let h='<div class="muted">直接點選要拆開的位置：</div><div class="split-text">';chars.forEach((ch,k)=>{h+=`<span>${esc(ch)}</span>`;if(k<chars.length-1)h+=`<button class="split-cut" onclick="confirmSplit(${i},${k+1})">│</button>`});h+='</div><button class="secondary" onclick="closeSplit()">取消</button>';$('splitPanel').innerHTML=h;$('splitPanel').classList.remove('hidden')}
+function confirmSplit(i,pos){let l=current.lines[i],c=Array.from(l.text),a=c.slice(0,pos).join('').trim(),b=c.slice(pos).join('').trim();if(!a||!b)return;l.text=a;l.tokens=[{tokenId:'T1',text:a,reading:null,override:null}];current.lines.splice(i+1,0,{lineId:uid(),text:b,startTime:null,tokens:[{tokenId:'T1',text:b,reading:null,override:null}]});targetIndex=i+1;save();closeSplit();renderLines();status()}
+function selectRetime(i){targetIndex=i;if(!timingMode)toggleTiming();else status()}
+function timingBaseTime(){for(let j=targetIndex-1;j>=0;j--)if(current.lines[j].startTime!=null)return current.lines[j].startTime;return 0}
+function timingPlayPause(){if(!player)return;let st=player.getPlayerState?.();if(st===1){player.pauseVideo()}else{activePlayLine=null;player.seekTo(Math.max(0,timingBaseTime()),true);player.playVideo()}setTimeout(updatePauseButton,80)}
+function markTarget(){if(!player?.getCurrentTime||!current?.lines?.[targetIndex])return;current.lines[targetIndex].startTime=+player.getCurrentTime().toFixed(2);save();let n=current.lines.findIndex((x,i)=>i>targetIndex&&x.startTime==null);if(n>=0)targetIndex=n;renderLines();status()}
+let _toggleTiming=toggleTiming;toggleTiming=function(){_toggleTiming();if(timingMode){let n=current.lines.findIndex(x=>x.startTime==null);targetIndex=n>=0?n:0;status()}};
+status=function(){if(!current||!current.lines.length)return;targetIndex=Math.max(0,Math.min(targetIndex,current.lines.length-1));let l=current.lines[targetIndex];$('timingStatus').textContent=`目標：${targetIndex+1} / ${current.lines.length}${l.startTime!=null?' · 目前 '+fmt(l.startTime):' · 待對時'}`;$('roughTiming')?.classList.remove('hidden');$('fineTiming')?.classList.add('hidden');$('timingPrev').textContent=targetIndex>0?current.lines[targetIndex-1].text:'—';$('timingCurrent').innerHTML=esc(l.text)+(l.startTime!=null?' <span class="target-badge">重新對時</span>':' <span class="target-badge">待對時</span>');$('timingNext').textContent=targetIndex+1<current.lines.length?current.lines[targetIndex+1].text:'—';$('currentEdit').innerHTML=`<button class="secondary" onclick="mergeNext(${targetIndex})" ${targetIndex>=current.lines.length-1?'disabled':''}>與下一句合併</button><button class="secondary" onclick="openSplit(${targetIndex})">拆分這一句</button>`;updatePauseButton()};
+let _renderLines=renderLines;renderLines=function(){_renderLines();document.querySelectorAll('#lines .line').forEach((el,i)=>{let row=el.querySelector('.editline');if(row&&!row.querySelector('.retimeBtn')){let b=document.createElement('button');b.className='secondary retimeBtn';b.textContent='重新對時';b.onclick=e=>{e.stopPropagation();selectRetime(i)};row.prepend(b)}let bs=row?.querySelectorAll('button');if(bs)bs.forEach(b=>{if(b.textContent==='拆分')b.onclick=e=>{e.stopPropagation();openSplit(i)}})})};
+/* Micro-adjust audition: pause, then Play always restarts from that line's current timestamp. */
+toggleLinePlayback=function(i){if(!player||!current?.lines?.[i]||current.lines[i].startTime==null)return;let st=player.getPlayerState?.();if(activePlayLine===i&&st===1){player.pauseVideo();updatePauseButton();updateLinePlayButtons();return}activePlayLine=i;player.seekTo(current.lines[i].startTime,true);player.playVideo();updatePauseButton();setTimeout(updateLinePlayButtons,80)};
+let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLine===i&&player&&current.lines[i].startTime!=null){player.seekTo(current.lines[i].startTime,true);player.playVideo()}};
+/* Simplify timing controls and add split panel. */
+(function(){let actions=document.querySelector('.timing-actions .row');if(actions)actions.innerHTML='<button class="secondary" id="pauseBtn" onclick="timingPlayPause()">▶ 播放</button><button id="markBtn" onclick="markTarget()">記錄這一句</button>';let ce=$('currentEdit');if(ce&&!$('splitPanel'))ce.insertAdjacentHTML('afterend','<div id="splitPanel" class="split-panel hidden"></div>');updatePauseButton()})();
+</script>
+
 </body></html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.6</title>
+<title>日文同步歌詞 V1.7</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.6</h1>
+<h1>日文同步歌詞播放器 V1.7</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -254,7 +254,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V1.6 usability patch */
+/* V1.7 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -277,7 +277,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V1.6: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V1.7: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -414,7 +414,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V1.6: semi-auto timing can be reused, with explicit start-line selection. */
+/* V1.7: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -495,7 +495,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V1.6: clearly separate stored lyric timestamp from live YouTube time. */
+/* V1.7: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -586,6 +586,127 @@ toggleTiming=function(){
     return;
   }
   _v16ToggleTiming();
+};
+</script>
+
+
+<style>
+.undo-disabled{opacity:.45;pointer-events:none}
+</style>
+<script>
+/* V1.7: safer mobile semi-auto timing — debounce + session-only undo. */
+let semiAutoUndoStack=[];
+let semiAutoLastMarkAt=0;
+const SEMI_AUTO_DEBOUNCE_MS=400;
+
+function resetSemiAutoUndo(){
+  semiAutoUndoStack=[];
+  updateSemiAutoUndoButton();
+}
+function updateSemiAutoUndoButton(){
+  let b=document.getElementById('semiAutoUndoBtn');
+  if(!b)return;
+  b.disabled=semiAutoUndoStack.length===0;
+  b.classList.toggle('undo-disabled',semiAutoUndoStack.length===0);
+}
+function ensureSemiAutoUndoButton(){
+  if(!timingMode)return;
+  let mark=document.getElementById('markBtn');
+  if(!mark)return;
+  let row=mark.parentElement;
+  if(!row)return;
+  let b=document.getElementById('semiAutoUndoBtn');
+  if(!b){
+    b=document.createElement('button');
+    b.id='semiAutoUndoBtn';
+    b.className='secondary';
+    b.textContent='↶ 上一步';
+    b.onclick=undoSemiAutoStep;
+    row.insertBefore(b,mark);
+  }
+  updateSemiAutoUndoButton();
+}
+function undoSemiAutoStep(){
+  if(!semiAutoUndoStack.length||!current)return;
+  let step=semiAutoUndoStack.pop();
+  let idx=current.lines.findIndex(x=>x.lineId===step.lineId);
+  if(idx<0)idx=step.index;
+  if(idx<0||idx>=current.lines.length)return;
+  current.lines[idx].startTime=step.previousTime;
+  targetIndex=idx;
+  save();
+  renderLines();
+  status();
+  updateSemiAutoUndoButton();
+  // Put the player at the same useful replay baseline as normal semi-auto play.
+  if(player?.seekTo){
+    player.pauseVideo();
+    player.seekTo(Math.max(0,previousTimedStart(idx)),true);
+  }
+  refreshTimingPlayButton();
+}
+
+/* Start of each semi-auto session gets a fresh undo history. */
+let _v17StartSemiAuto=startSemiAutoFromSelected;
+startSemiAutoFromSelected=function(){
+  resetSemiAutoUndo();
+  semiAutoLastMarkAt=0;
+  _v17StartSemiAuto();
+  ensureSemiAutoUndoButton();
+};
+
+/* Record button: 400 ms mobile double-tap protection + reversible session history. */
+markTarget=function(){
+  if(!player?.getCurrentTime||!current?.lines?.[targetIndex])return;
+  let nowMs=Date.now();
+  if(nowMs-semiAutoLastMarkAt<SEMI_AUTO_DEBOUNCE_MS)return;
+  semiAutoLastMarkAt=nowMs;
+
+  let idx=targetIndex, line=current.lines[idx], now=player.getCurrentTime();
+  if(!isFinite(now))return;
+
+  semiAutoUndoStack.push({
+    lineId:line.lineId,
+    index:idx,
+    previousTime:line.startTime
+  });
+
+  line.startTime=+now.toFixed(2);
+  save();
+  renderLines();
+
+  if(idx<current.lines.length-1){
+    targetIndex=idx+1;
+    status();
+  }else{
+    status();
+    alert('已到最後一句。半自動對時完成。');
+  }
+  ensureSemiAutoUndoButton();
+
+  let b=document.getElementById('markBtn');
+  if(b){
+    b.disabled=true;
+    setTimeout(()=>{ if(document.body.contains(b)) b.disabled=false; },SEMI_AUTO_DEBOUNCE_MS);
+  }
+};
+
+/* Whenever the timing view redraws, keep the undo control visible/stateful. */
+let _v17Status=status;
+status=function(){
+  _v17Status();
+  if(timingMode)ensureSemiAutoUndoButton();
+};
+
+/* Exiting semi-auto ends the undo session; old song data remains untouched. */
+let _v17ToggleTiming=toggleTiming;
+toggleTiming=function(){
+  let wasTiming=timingMode;
+  _v17ToggleTiming();
+  if(wasTiming && !timingMode){
+    resetSemiAutoUndo();
+    semiAutoLastMarkAt=0;
+  }
 };
 </script>
 

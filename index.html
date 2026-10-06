@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.4</title>
+<title>日文同步歌詞 V1.5</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.4</h1>
+<h1>日文同步歌詞播放器 V1.5</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -254,7 +254,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V1.4 usability patch */
+/* V1.5 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -277,7 +277,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V1.4: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V1.5: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -399,6 +399,91 @@ status=function(){
     btns.forEach(b=>{
       if(b.textContent.includes('拆分')) b.onclick=()=>openSplit(targetIndex);
     });
+  }
+};
+</script>
+
+
+<style>
+.timing-picker-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.timing-picker{background:#fff;color:#111;width:min(720px,100%);max-height:82vh;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.timing-picker-list{overflow:auto;border:1px solid #ddd;border-radius:12px;padding:6px}
+.timing-pick-line{width:100%;display:flex;gap:10px;text-align:left;background:transparent;color:#111;border:0;border-radius:9px;padding:10px}
+.timing-pick-line.selected{background:#e8edf3;font-weight:700}
+.timing-pick-time{min-width:64px;color:#666;font-variant-numeric:tabular-nums}
+.timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+</style>
+<script>
+/* V1.5: semi-auto timing can be reused, with explicit start-line selection. */
+let semiAutoSelectedIndex=null;
+
+function closeSemiAutoPicker(){
+  document.getElementById('semiAutoPicker')?.remove();
+  semiAutoSelectedIndex=null;
+}
+function renderSemiAutoPicker(){
+  let old=document.getElementById('semiAutoPicker'); if(old)old.remove();
+  let wrap=document.createElement('div');
+  wrap.id='semiAutoPicker'; wrap.className='timing-picker-backdrop';
+  let initial=current.lines.findIndex(x=>x.startTime==null);
+  semiAutoSelectedIndex=initial>=0?initial:0;
+  wrap.innerHTML=`<div class="timing-picker" onclick="event.stopPropagation()">
+    <div><b>選擇半自動對時的起始句</b></div>
+    <div class="muted">點選一句只會選取，不會立即開始。原有時間戳會保留，只有實際重新記錄的句子會被覆蓋。</div>
+    <div id="semiAutoPickList" class="timing-picker-list"></div>
+    <div class="timing-picker-actions">
+      <button class="secondary" onclick="closeSemiAutoPicker()">取消</button>
+      <button id="semiAutoStartBtn" onclick="startSemiAutoFromSelected()">開始對時</button>
+    </div>
+  </div>`;
+  wrap.onclick=closeSemiAutoPicker;
+  document.body.appendChild(wrap);
+  refreshSemiAutoPickList();
+  setTimeout(()=>document.querySelector('.timing-pick-line.selected')?.scrollIntoView({block:'center'}),50);
+}
+function refreshSemiAutoPickList(){
+  let box=document.getElementById('semiAutoPickList'); if(!box)return;
+  box.innerHTML=current.lines.map((l,i)=>`<button class="timing-pick-line ${i===semiAutoSelectedIndex?'selected':''}" onclick="pickSemiAutoStart(${i})">
+    <span class="timing-pick-time">${l.startTime==null?'--:--':fmt(l.startTime)}</span>
+    <span>${i+1}. ${esc(l.text)}</span>
+  </button>`).join('');
+  let b=document.getElementById('semiAutoStartBtn');
+  if(b)b.textContent=`從第 ${semiAutoSelectedIndex+1} 句開始對時`;
+}
+function pickSemiAutoStart(i){semiAutoSelectedIndex=i;refreshSemiAutoPickList()}
+function startSemiAutoFromSelected(){
+  if(semiAutoSelectedIndex==null)return;
+  let chosen=semiAutoSelectedIndex;
+  closeSemiAutoPicker();
+  if(!timingMode)_v14ToggleTiming();
+  targetIndex=chosen;
+  if(timingMode)status();
+}
+
+/* Top "半自動對時" now opens a safe selector instead of blocking completed songs. */
+toggleTiming=function(){
+  if(!current||!current.lines?.length)return;
+  if(timingMode){ _v14ToggleTiming(); return; }
+  let hasTimed=current.lines.some(x=>x.startTime!=null);
+  if(hasTimed){
+    let ok=confirm('這首歌已有對時資料。\n\n你仍可重新使用半自動對時；原有時間戳不會先被清除，只有你實際重新記錄的句子會被覆蓋。\n\n是否繼續選擇起始句？');
+    if(!ok)return;
+  }
+  renderSemiAutoPicker();
+};
+
+/* During semi-auto timing, always continue to the next physical lyric line.
+   This also works when all following lines already have old timestamps. */
+markTarget=function(){
+  if(!player?.getCurrentTime||!current?.lines?.[targetIndex])return;
+  current.lines[targetIndex].startTime=+player.getCurrentTime().toFixed(2);
+  save(); renderLines();
+  if(targetIndex<current.lines.length-1){
+    targetIndex++;
+    status();
+  }else{
+    status();
+    alert('已到最後一句。半自動對時完成。');
   }
 };
 </script>

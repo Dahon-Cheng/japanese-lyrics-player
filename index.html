@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.7</title>
+<title>日文同步歌詞 V1.8</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.7</h1>
+<h1>日文同步歌詞播放器 V1.8</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -254,7 +254,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V1.7 usability patch */
+/* V1.8 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -277,7 +277,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V1.7: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V1.8: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -414,7 +414,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V1.7: semi-auto timing can be reused, with explicit start-line selection. */
+/* V1.8: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -495,7 +495,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V1.7: clearly separate stored lyric timestamp from live YouTube time. */
+/* V1.8: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -594,7 +594,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V1.7: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V1.8: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -707,6 +707,84 @@ toggleTiming=function(){
     resetSemiAutoUndo();
     semiAutoLastMarkAt=0;
   }
+};
+</script>
+
+
+<style>
+.timing-nav{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.timing-nav button{min-height:42px}
+.timing-jump-btn{font-weight:700;min-width:115px}
+.lyric-jump-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:10000;display:flex;align-items:center;justify-content:center;padding:14px}
+.lyric-jump-modal{width:min(720px,100%);max-height:84vh;background:#fff;color:#111;border-radius:16px;padding:14px;display:flex;flex-direction:column}
+.lyric-jump-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.lyric-jump-list{overflow:auto;border:1px solid #ddd;border-radius:12px;padding:5px}
+.lyric-jump-row{width:100%;display:grid;grid-template-columns:38px 70px 1fr;gap:8px;align-items:start;text-align:left;border:0;background:transparent;color:#111;padding:11px 8px;border-radius:9px}
+.lyric-jump-row.current{background:#e8edf3;font-weight:700}
+.lyric-jump-row:hover{background:#f0f2f4}
+.lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
+</style>
+<script>
+/* V1.8: semi-auto navigation — previous/next + tap center to choose any lyric. */
+function changeTimingTarget(delta){
+  if(!timingMode||!current?.lines?.length)return;
+  let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
+  if(ni===targetIndex)return;
+  targetIndex=ni;
+  if(player?.pauseVideo)player.pauseVideo();
+  status();
+}
+function closeLyricJump(){
+  document.getElementById('lyricJumpModal')?.remove();
+}
+function openLyricJump(){
+  if(!timingMode||!current?.lines?.length)return;
+  closeLyricJump();
+  let wrap=document.createElement('div');
+  wrap.id='lyricJumpModal';
+  wrap.className='lyric-jump-backdrop';
+  wrap.innerHTML=`<div class="lyric-jump-modal" onclick="event.stopPropagation()">
+    <div class="lyric-jump-head"><b>跳轉到歌詞</b><button class="secondary" onclick="closeLyricJump()">✕</button></div>
+    <div id="lyricJumpList" class="lyric-jump-list">
+      ${current.lines.map((l,i)=>`<button class="lyric-jump-row ${i===targetIndex?'current':''}" data-jump-index="${i}" onclick="jumpToTimingLine(${i})">
+        <span class="lyric-jump-no">${i+1}</span>
+        <span class="lyric-jump-time">${l.startTime==null?'--:--':fmt(l.startTime)}</span>
+        <span>${esc(l.text)}${i===targetIndex?' ✓':''}</span>
+      </button>`).join('')}
+    </div>
+  </div>`;
+  wrap.onclick=closeLyricJump;
+  document.body.appendChild(wrap);
+  setTimeout(()=>wrap.querySelector('.lyric-jump-row.current')?.scrollIntoView({block:'center'}),30);
+}
+function jumpToTimingLine(i){
+  if(i<0||i>=current.lines.length)return;
+  targetIndex=i;
+  closeLyricJump();
+  if(player?.pauseVideo)player.pauseVideo();
+  status();
+}
+function ensureTimingNavigation(){
+  if(!timingMode)return;
+  let s=document.getElementById('timingStatus');
+  if(!s)return;
+  let nav=document.getElementById('timingNavV18');
+  if(!nav){
+    nav=document.createElement('div');
+    nav.id='timingNavV18';
+    nav.className='timing-nav';
+    s.insertAdjacentElement('afterend',nav);
+  }
+  nav.innerHTML=`<button class="secondary" onclick="changeTimingTarget(-1)" ${targetIndex<=0?'disabled':''}>〈 上一句</button>
+    <button class="secondary timing-jump-btn" onclick="openLyricJump()">第 ${targetIndex+1} / ${current.lines.length} 句 ▼</button>
+    <button class="secondary" onclick="changeTimingTarget(1)" ${targetIndex>=current.lines.length-1?'disabled':''}>下一句 〉</button>`;
+}
+
+/* Navigation never changes timestamps and never clears the current session Undo stack. */
+let _v18Status=status;
+status=function(){
+  _v18Status();
+  if(timingMode)ensureTimingNavigation();
 };
 </script>
 

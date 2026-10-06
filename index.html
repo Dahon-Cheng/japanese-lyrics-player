@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.5</title>
+<title>日文同步歌詞 V1.6</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.5</h1>
+<h1>日文同步歌詞播放器 V1.6</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -254,7 +254,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V1.5 usability patch */
+/* V1.6 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -277,7 +277,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V1.5: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V1.6: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -414,7 +414,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V1.5: semi-auto timing can be reused, with explicit start-line selection. */
+/* V1.6: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -485,6 +485,107 @@ markTarget=function(){
     status();
     alert('已到最後一句。半自動對時完成。');
   }
+};
+</script>
+
+
+<style>
+.timing-times{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:8px 0 12px}
+.timing-timebox{background:#f3f3f3;border-radius:10px;padding:8px 12px;min-width:125px;text-align:center}
+.timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
+</style>
+<script>
+/* V1.6: clearly separate stored lyric timestamp from live YouTube time. */
+let liveTimingTimer=null;
+
+function fmtPrecise(s){
+  if(s==null || !isFinite(s)) return '--:--.--';
+  let m=Math.floor(s/60), sec=s-m*60;
+  return `${m}:${sec.toFixed(2).padStart(5,'0')}`;
+}
+function stopLiveTimingClock(){
+  if(liveTimingTimer){clearInterval(liveTimingTimer);liveTimingTimer=null}
+}
+function startLiveTimingClock(){
+  stopLiveTimingClock();
+  liveTimingTimer=setInterval(()=>{
+    let el=document.getElementById('livePlayerTime');
+    if(el && player?.getCurrentTime){
+      let t=player.getCurrentTime();
+      if(isFinite(t))el.textContent=fmtPrecise(t);
+    }
+    refreshTimingPlayButton();
+  },100);
+}
+function refreshTimingPlayButton(){
+  let b=document.getElementById('pauseBtn');
+  if(!b||!player?.getPlayerState)return;
+  b.textContent=player.getPlayerState()===1?'❚❚ 暫停':'▶ 播放';
+}
+
+/* Semi-auto transport:
+   - while playing: pause at current point
+   - whenever paused/stopped and Play is pressed: restart from the previous timed lyric */
+toggleTimingPlayback=function(){
+  if(!player||!current?.lines?.[targetIndex])return;
+  let state=player.getPlayerState?.();
+  if(state===1){
+    player.pauseVideo();
+    refreshTimingPlayButton();
+    return;
+  }
+  activePlayLine=null;
+  let base=previousTimedStart(targetIndex);
+  player.seekTo(Math.max(0,base),true);
+  player.playVideo();
+  refreshTimingPlayButton();
+  startLiveTimingClock();
+};
+
+/* Keep the original stored timestamp visible while auditioning/re-recording. */
+let _v16Status=status;
+status=function(){
+  _v16Status();
+  if(!timingMode)return;
+  let l=current.lines[targetIndex];
+  let statusEl=document.getElementById('timingStatus');
+  if(statusEl){
+    statusEl.innerHTML=`目標：${targetIndex+1} / ${current.lines.length}
+      <div class="timing-times">
+        <div class="timing-timebox"><span class="muted">原時間戳</span><b>${l.startTime==null?'--:--.--':fmtPrecise(l.startTime)}</b></div>
+        <div class="timing-timebox"><span class="muted">影片目前</span><b id="livePlayerTime">${player?.getCurrentTime?fmtPrecise(player.getCurrentTime()):'--:--.--'}</b></div>
+      </div>`;
+  }
+  refreshTimingPlayButton();
+  startLiveTimingClock();
+};
+
+/* Record exactly the live YouTube player time, then advance one physical lyric line. */
+markTarget=function(){
+  if(!player?.getCurrentTime||!current?.lines?.[targetIndex])return;
+  let now=player.getCurrentTime();
+  if(!isFinite(now))return;
+  current.lines[targetIndex].startTime=+now.toFixed(2);
+  save();
+  renderLines();
+  if(targetIndex<current.lines.length-1){
+    targetIndex++;
+    status();
+  }else{
+    status();
+    alert('已到最後一句。半自動對時完成。');
+  }
+};
+
+/* Leaving semi-auto mode stops the UI clock. */
+let _v16ToggleTiming=toggleTiming;
+toggleTiming=function(){
+  if(timingMode){
+    stopLiveTimingClock();
+    _v16ToggleTiming();
+    return;
+  }
+  _v16ToggleTiming();
 };
 </script>
 

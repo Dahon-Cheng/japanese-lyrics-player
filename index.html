@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.8</title>
+<title>日文同步歌詞 V1.9</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -28,7 +28,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </style>
 </head>
 <body>
-<h1>日文同步歌詞播放器 V1.8</h1>
+<h1>日文同步歌詞播放器 V1.9</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -254,7 +254,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V1.8 usability patch */
+/* V1.9 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -277,7 +277,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V1.8: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V1.9: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -414,7 +414,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V1.8: semi-auto timing can be reused, with explicit start-line selection. */
+/* V1.9: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -495,7 +495,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V1.8: clearly separate stored lyric timestamp from live YouTube time. */
+/* V1.9: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -594,7 +594,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V1.8: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V1.9: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -725,7 +725,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V1.8: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V1.9: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -786,6 +786,21 @@ status=function(){
   _v18Status();
   if(timingMode)ensureTimingNavigation();
 };
+</script>
+
+
+<style>
+.playback-active{background:rgba(255,215,0,.18)!important;border-radius:10px;font-weight:700;transition:background .15s ease}
+</style>
+<script>
+let playbackSyncTimer=null,playbackActiveIndex=-1;
+function v19Rows(){const n=current?.lines?.length||0;for(const s of ['#lyricsList .lyric-row','#lyricsList .line','#lyricsList .lyric','#lyricList .lyric-row','#lyricList .line','#lyricList .lyric','.lyrics-list .lyric-row','.lyrics-list .line','.lyrics-list .lyric']){let a=[...document.querySelectorAll(s)];if(a.length===n)return a;}return [];}
+function v19Index(t){let a=current?.lines||[],x=-1;for(let i=0;i<a.length;i++){if(a[i].startTime!=null&&+a[i].startTime<=t)x=i;else if(a[i].startTime!=null&&+a[i].startTime>t)break;}return x;}
+function v19Hi(i,scroll=true){if(i===playbackActiveIndex)return;let r=v19Rows();r.forEach((e,j)=>e.classList.toggle('playback-active',j===i));playbackActiveIndex=i;if(scroll&&i>=0&&r[i])r[i].scrollIntoView({behavior:'smooth',block:'center'});}
+function v19Tick(){if(timingMode||!current||!player?.getCurrentTime)return;v19Hi(v19Index(+player.getCurrentTime()||0),true);}
+playbackSyncTimer=setInterval(v19Tick,120);
+document.addEventListener('click',e=>{if(timingMode||!current||!player?.seekTo||e.target.closest('button,input,textarea,select,a'))return;let r=v19Rows(),row=e.target.closest('.lyric-row,.line,.lyric'),i=r.indexOf(row);if(i<0)return;let st=current.lines[i]?.startTime;if(st==null)return;player.seekTo(+st,true);player.playVideo?.();playbackActiveIndex=-1;v19Hi(i,true);},true);
+let _v19Status=status;status=function(){_v19Status();if(!timingMode){playbackActiveIndex=-1;setTimeout(v19Tick,0);}};
 </script>
 
 </body></html>

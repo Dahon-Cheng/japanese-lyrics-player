@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V1.9.1</title>
+<title>日文同步歌詞 V2.0 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -26,9 +26,17 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
  .fine,.editline{margin-left:0}.timing-actions .row{display:grid;grid-template-columns:1fr 1fr}
 }
 </style>
-</head>
+<style>
+#furiganaControls select{min-width:110px;padding:9px;border-radius:8px}
+#lines ruby,#fineLines ruby{ruby-position:over}#lines rt,#fineLines rt{font-size:.56em}
+.furi-token{cursor:pointer;border-bottom:1px dotted #71839a}
+.furi-overlay{position:fixed;inset:0;background:#0009;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.furi-dialog{background:#202b3a;color:#fff;padding:20px;border-radius:14px;width:min(440px,100%);max-height:90vh;overflow:auto}
+.furi-dialog input[type=text]{width:100%;padding:10px;margin:10px 0;color:#111}
+.furi-dialog label{display:block;margin:10px 0}
+</style></head>
 <body>
-<h1>日文同步歌詞播放器 V1.9.1</h1>
+<h1>日文同步歌詞播放器 V2.0 測試版</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -87,7 +95,12 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
   </div>
  </div>
 
- <div id="lines" class="card"></div>
+<div class="card" id="furiganaControls">
+ <div class="row"><label for="furiMode">歌詞顯示</label><select id="furiMode" onchange="furiModeChanged()"><option value="original">原文</option><option value="ruby">振假名</option><option value="hiragana">全平假名</option></select>
+ <button id="furiAnalyze" class="secondary" onclick="analyzeFurigana()">分析振假名</button></div>
+ <div id="furiStatus" class="muted">初次使用請按「分析振假名」；之後會記住每首歌的分析與讀音修正。</div>
+ </div>
+  <div id="lines" class="card"></div>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -254,7 +267,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V1.9.1 usability patch */
+/* V2.0 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -277,7 +290,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V1.9.1: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V2.0 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -414,7 +427,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V1.9.1: semi-auto timing can be reused, with explicit start-line selection. */
+/* V2.0 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -495,7 +508,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V1.9.1: clearly separate stored lyric timestamp from live YouTube time. */
+/* V2.0 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -594,7 +607,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V1.9.1: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V2.0 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -725,7 +738,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V1.9.1: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V2.0 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -803,4 +816,112 @@ document.addEventListener('click',e=>{if(timingMode||!current||!player?.seekTo||
 let _v19Status=status;status=function(){_v19Status();if(!timingMode){playbackActiveIndex=-1;setTimeout(v19Tick,0);}};
 </script>
 
+
+<script>
+/* V2.0 additive furigana module. Never modifies jpSongsV1 or song timings. */
+const furiStoreKey=id=>'jpFuriganaV2:'+id;
+let furiRecords={},furiMode='original',furiWorker=null,furiSeq=0,furiWait=new Map();
+const furiWorkerCode=String.raw`
+let tokenizer=null,kuromojiLoaded=false;
+const roots=['https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/','https://unpkg.com/kuromoji@0.1.2/'];
+function postStatus(text){self.postMessage({kind:'status',text})}
+function build(path){return new Promise((resolve,reject)=>{self.kuromoji.builder({dicPath:path}).build((e,t)=>e?reject(e):resolve(t))})}
+async function init(){if(tokenizer)return;
+ if(!kuromojiLoaded){postStatus('Worker：載入 Kuromoji 套件…');let errors=[];for(const root of roots){try{importScripts(root+'build/kuromoji.js');kuromojiLoaded=!!self.kuromoji;if(kuromojiLoaded)break}catch(e){errors.push(String(e))}}if(!kuromojiLoaded)throw Error('套件載入失敗：'+errors.join(' / '))}
+ let errors=[];for(let i=0;i<roots.length;i++){try{postStatus('Worker：初始化字典來源 '+(i+1)+' / 2…');tokenizer=await build(roots[i]+'dict/');postStatus('Kuromoji 字典初始化完成');return}catch(e){errors.push('來源 '+(i+1)+'：'+String(e))}}
+ throw Error(errors.join('；'));
+}
+self.onmessage=async e=>{const {id,action,text}=e.data;try{if(action==='analyze'){await init();let lines=text.split('\n').map(line=>line?tokenizer.tokenize(line).map(t=>({surface_form:t.surface_form,reading:t.reading||'*'})):[]);self.postMessage({id,ok:true,lines})}}catch(err){self.postMessage({id,ok:false,error:String(err?.message||err)})}}
+`;
+function furiHira(s){return String(s||'').replace(/[\u30a1-\u30f6]/g,c=>String.fromCharCode(c.charCodeAt(0)-96))}
+function furiKanji(s){return /[\u3400-\u9fff々〆ヶ]/u.test(s)}
+function furiGet(id){try{return JSON.parse(localStorage.getItem(furiStoreKey(id))||'null')}catch{return null}}
+function furiPut(){if(!current)return;try{localStorage.setItem(furiStoreKey(current.songId),JSON.stringify(furiRecords))}catch(e){$('furiStatus').textContent='無法儲存振假名：'+e.message}}
+function furiLines(){return current?.lines||[]}
+function furiRecord(line){return furiRecords?.lines?.find(x=>x.lineId===line.lineId&&x.text===line.text)||furiRecords?.lines?.find(x=>x.text===line.text)}
+function furiText(line,index){
+ if(furiMode==='original')return esc(line.text);
+ const record=furiRecord(line);
+ if(!record)return esc(line.text);
+ return record.tokens.map((t,j)=>{
+  const read=t.once??furiRecords.all?.[t.surface]??t.reading;
+  const hira=furiHira(read);
+  const surface=t.surface;
+  let display;
+  if(furiMode==='hiragana')display=esc(read&&read!=='*'?hira:surface);
+  else if(!furiKanji(surface)||!read||read==='*')display=esc(surface);
+  else{
+   let lead=(surface.match(/^[ぁ-ゖァ-ヺー]+/)||[''])[0],tail=(surface.match(/[ぁ-ゖァ-ヺー]+$/)||[''])[0],r=hira;
+   if(lead&&r.startsWith(furiHira(lead)))r=r.slice(furiHira(lead).length);else lead='';
+   if(tail&&r.endsWith(furiHira(tail)))r=r.slice(0,-furiHira(tail).length);else tail='';
+   const middle=surface.slice(lead.length,surface.length-tail.length);
+   display=esc(lead)+(middle?'<ruby>'+esc(middle)+'<rt>'+esc(r||hira)+'</rt></ruby>':'')+esc(tail);
+  }
+  return furiKanji(surface)?`<span class="furi-token" onclick="event.stopPropagation();furiEdit('${line.lineId}',${j})">${display}</span>`:display;
+ }).join('');
+}
+const furiOldRenderText=renderText;
+renderText=function(line){return furiMode==='original'?furiOldRenderText(line):furiText(line)};
+const furiOldOpenSong=openSong;
+openSong=function(id){furiMode='original';furiRecords=furiGet(id)||{lines:[],all:{}};furiOldOpenSong(id);$('furiMode').value=furiMode;furiStatus()};
+function furiStatus(msg){
+ $('furiStatus').textContent=msg||(`已分析 ${furiLines().filter(l=>furiRecord(l)).length}/${furiLines().length} 句；點選漢字可修正讀音。`);
+}
+function furiModeChanged(){furiMode=$('furiMode').value;renderLines();if(typeof renderFine==='function'&&!$('fineTiming').classList.contains('hidden'))renderFine();furiStatus()}
+function furiWorkerStart(){
+ if(furiWorker)return furiWorker;
+ const blob=new Blob([furiWorkerCode],{type:'text/javascript'}),url=URL.createObjectURL(blob);
+ furiWorker=new Worker(url);URL.revokeObjectURL(url);
+ furiWorker.onmessage=e=>{
+  const m=e.data;if(m.kind==='status'){furiStatus(m.text);return}
+  const p=furiWait.get(m.id);if(!p)return;clearTimeout(p.timer);furiWait.delete(m.id);m.ok?p.resolve(m.lines):p.reject(Error(m.error||'分析失敗'));
+ };
+ furiWorker.onerror=e=>{for(const p of furiWait.values()){clearTimeout(p.timer);p.reject(Error(e.message||'Worker 發生錯誤'))}furiWait.clear();furiWorker.terminate();furiWorker=null};
+ return furiWorker;
+}
+function furiTokenize(text){return new Promise((resolve,reject)=>{
+ try{const w=furiWorkerStart(),id=++furiSeq,timer=setTimeout(()=>{furiWait.delete(id);reject(Error('字典載入逾時，請檢查網路'));},45000);
+ furiWait.set(id,{resolve,reject,timer});w.postMessage({id,action:'analyze',text})}catch(e){reject(e)}
+})}
+function furiLcs(a,b,key){
+ const n=a.length,m=b.length,dp=Array.from({length:n+1},()=>new Uint16Array(m+1));
+ for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=key(a[i])===key(b[j])?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+ let i=0,j=0,p=[];while(i<n&&j<m){if(key(a[i])===key(b[j])){p.push([i++,j++])}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return p;
+}
+async function analyzeFurigana(){
+ if(!current)return;
+ const id=current.songId,lines=current.lines.map(l=>({lineId:l.lineId,text:l.text})),old=furiRecords;
+ const btn=$('furiAnalyze');btn.disabled=true;furiStatus('分析中…');
+ try{
+  const output=await furiTokenize(lines.map(l=>l.text).join('\n'));
+  if(!current||current.songId!==id||current.lines.map(l=>l.text).join('\n')!==lines.map(l=>l.text).join('\n'))throw Error('歌詞在分析期間已變更，請重新分析');
+  const result=lines.map((l,i)=>({lineId:l.lineId,text:l.text,tokens:(output[i]||[]).map(t=>({surface:t.surface_form,reading:t.reading||'*'}))}));
+  const previous=old?.lines||[],pairs=furiLcs(previous,result,x=>x.text);
+  const usedOld=new Set(pairs.map(x=>x[0])),usedNew=new Set(pairs.map(x=>x[1]));
+  const remainOld=previous.map((_,i)=>i).filter(i=>!usedOld.has(i)),remainNew=result.map((_,i)=>i).filter(i=>!usedNew.has(i));
+  for(let i=0;i<Math.min(remainOld.length,remainNew.length);i++)pairs.push([remainOld[i],remainNew[i]]);
+  let kept=0;
+  for(const [oi,ni] of pairs){
+   const prev=previous[oi].tokens||[],next=result[ni].tokens;
+   for(const [a,b] of furiLcs(prev,next,t=>t.surface)){if(prev[a].once!==undefined){next[b].once=prev[a].once;kept++}}
+  }
+  furiRecords={lines:result,all:{...(old?.all||{})}};
+  furiPut();furiMode='ruby';$('furiMode').value='ruby';renderLines();if(!$('fineTiming').classList.contains('hidden'))renderFine();
+  furiStatus(`分析完成：${result.length} 句；保留 ${kept} 個單詞讀音修正。`);
+ }catch(e){furiStatus('分析失敗，原資料未變更：'+e.message)}
+ finally{btn.disabled=false}
+}
+function furiEdit(lineId,index){
+ if(!current)return;
+ const line=current.lines.find(x=>x.lineId===lineId),record=line&&furiRecord(line),token=record?.tokens[index];if(!token)return;
+ const currentReading=token.once??furiRecords.all?.[token.surface]??token.reading;
+ const modal=document.createElement('div');modal.className='furi-overlay';modal.innerHTML=`<div class="furi-dialog" role="dialog" aria-modal="true"><h3>修改讀音：${esc(token.surface)}</h3><p>自動辨識：${esc(furiHira(token.reading==='*'?'':token.reading))}</p><label>平假名讀音<input id="furiEditValue" type="text" value="${esc(furiHira(currentReading==='*'?'':currentReading))}"></label><label><input type="radio" name="furiScope" value="once" checked> 僅這個詞</label><label><input type="radio" name="furiScope" value="all"> 整首歌相同詞彙</label><div class="row"><button id="furiSave">儲存</button><button id="furiRestore" class="secondary">恢復自動讀音</button><button id="furiCancel" class="secondary">取消</button></div></div>`;
+ document.body.appendChild(modal);
+ const close=()=>modal.remove(),refresh=()=>{furiPut();renderLines();if(!$('fineTiming').classList.contains('hidden'))renderFine();close()};
+ modal.onclick=e=>{if(e.target===modal)close()};
+ modal.querySelector('#furiCancel').onclick=close;
+ modal.querySelector('#furiSave').onclick=()=>{const v=furiHira(modal.querySelector('#furiEditValue').value.trim());if(!v){alert('請輸入讀音');return}if(modal.querySelector('input[name=furiScope]:checked').value==='all'){furiRecords.all[token.surface]=v;delete token.once}else token.once=v;refresh()};
+ modal.querySelector('#furiRestore').onclick=()=>{delete token.once;delete furiRecords.all[token.surface];refresh()};
+}
+</script>
 </body></html>

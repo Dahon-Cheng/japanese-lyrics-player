@@ -1,12 +1,12 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>日文振假名方案比較 DEMO V2.6</title><style>
-:root{color-scheme:dark;font-family:system-ui,'Noto Sans TC',sans-serif}body{margin:0;background:#101827;color:#e9eef7}main{max-width:950px;margin:auto;padding:18px}h1{font-size:1.5rem;margin:8px 0}p,.note{color:#b8c5d8;line-height:1.65}textarea{width:100%;box-sizing:border-box;background:#1d293a;color:white;border:1px solid #45546a;border-radius:10px;padding:12px;font-size:16px;line-height:1.7}button{background:#467fe9;color:white;border:0;border-radius:9px;padding:11px 15px;font-size:15px;cursor:pointer}button:disabled{opacity:.45}button.alt{background:#34445d}button:focus-visible{outline:2px solid white}.bar{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:680px){.cols{grid-template-columns:1fr}}section{background:#1c293a;border:1px solid #34445d;border-radius:13px;padding:15px;min-width:0}h2{font-size:1.1rem;margin:0 0 8px}.status{font-size:13px;color:#aabbd4;min-height:24px}.output{white-space:pre-wrap;overflow-wrap:anywhere;font-size:20px;line-height:2.6;min-height:100px}ruby rt{font-size:11px;color:#f7d88b}.warn{color:#ffbd86}.ok{color:#9bdfc2}.token{display:inline-block;margin:2px 3px 2px 0;padding:4px 7px;background:#26364b;border-radius:6px;font-size:13px}.token small{display:block;color:#f7d88b}.foot{font-size:13px;color:#aabbd4}select{background:#25364b;color:white;padding:9px;border:1px solid #566782;border-radius:8px}</style></head><body><main><h1>日文振假名方案比較 DEMO V2.6</h1><p>獨立測試，不會讀取或修改播放器的歌曲資料。請貼上歌詞，比較「Kuromoji 分詞＋自行組合 Ruby」與「Kuroshiro 轉換」。兩者若共用 Kuromoji 分析器，讀音結果通常相近。</p>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>日文振假名方案比較 DEMO V2.7</title><style>
+:root{color-scheme:dark;font-family:system-ui,'Noto Sans TC',sans-serif}body{margin:0;background:#101827;color:#e9eef7}main{max-width:950px;margin:auto;padding:18px}h1{font-size:1.5rem;margin:8px 0}p,.note{color:#b8c5d8;line-height:1.65}textarea{width:100%;box-sizing:border-box;background:#1d293a;color:white;border:1px solid #45546a;border-radius:10px;padding:12px;font-size:16px;line-height:1.7}button{background:#467fe9;color:white;border:0;border-radius:9px;padding:11px 15px;font-size:15px;cursor:pointer}button:disabled{opacity:.45}button.alt{background:#34445d}button:focus-visible{outline:2px solid white}.bar{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:680px){.cols{grid-template-columns:1fr}}section{background:#1c293a;border:1px solid #34445d;border-radius:13px;padding:15px;min-width:0}h2{font-size:1.1rem;margin:0 0 8px}.status{font-size:13px;color:#aabbd4;min-height:24px}.output{white-space:pre-wrap;overflow-wrap:anywhere;font-size:20px;line-height:2.6;min-height:100px}ruby rt{font-size:11px;color:#f7d88b}.warn{color:#ffbd86}.ok{color:#9bdfc2}.token{display:inline-block;margin:2px 3px 2px 0;padding:4px 7px;background:#26364b;border-radius:6px;font-size:13px}.token small{display:block;color:#f7d88b}.foot{font-size:13px;color:#aabbd4}select{background:#25364b;color:white;padding:9px;border:1px solid #566782;border-radius:8px}</style></head><body><main><h1>日文振假名方案比較 DEMO V2.7</h1><p>獨立測試，不會讀取或修改播放器的歌曲資料。請貼上歌詞，比較「Kuromoji 分詞＋自行組合 Ruby」與「Kuroshiro 轉換」。兩者若共用 Kuromoji 分析器，讀音結果通常相近。</p>
 <label for="lyrics">測試歌詞</label><textarea id="lyrics" rows="6">君の名前を呼んで
 明日も会えると信じている
 今日という日を忘れない
 生きている意味を探して</textarea>
 <div class="bar"><button id="run">開始比較</button><button class="alt" id="sample">還原範例</button><label>顯示 <select id="mode"><option value="furigana">漢字＋振假名</option><option value="hiragana">全平假名</option></select></label></div>
 <div id="global" class="status" aria-live="polite">尚未開始。第一次使用需要下載分析字典。</div><div class="cols"><section><h2>A｜Kuromoji.js</h2><div id="aStatus" class="status">待測試</div><div id="aOutput" class="output"></div><details><summary>檢視斷詞／讀音</summary><div id="tokens"></div></details></section><section><h2>B｜Kuroshiro + Kuromoji</h2><div id="bStatus" class="status">待測試</div><div id="bOutput" class="output"></div></section></div>
-<p class="foot">本 DEMO 不呼叫任何辨識 API。V2.6 僅含漢字詞彙需要確認，非漢字仍正常顯示。首次載入 JavaScript 套件與字典需要網路，之後的歌詞分析在瀏覽器內執行。測試資料不會上傳到本 DEMO 的伺服器。若 B 套件載入失敗，會顯示錯誤，不會以 A 的結果假冒 B。</p><section id="reviewPanel" style="margin-top:14px"><h2>讀音人工確認與修正</h2><p class="note">按「開始比較」後，只有含漢字的詞可以標記正確、錯誤或待確認；錯誤時可填入正確平假名。修正只影響下方的人工校正預覽，不會冒充分析器原始輸出。</p><div id="reviewSummary" class="status">請先執行比較</div><div class="bar"><button class="alt" id="resetReviews">清除本次標記</button><button class="alt" id="exportReviews">匯出確認結果 JSON</button></div><div id="reviewList"></div><h2 style="margin-top:16px">人工校正後預覽</h2><div id="reviewPreview" class="output"></div></section></main>
+<p class="foot">本 DEMO 不呼叫任何辨識 API。V2.7 僅含漢字詞彙需要確認，非漢字仍正常顯示。首次載入 JavaScript 套件與字典需要網路，之後的歌詞分析在瀏覽器內執行。測試資料不會上傳到本 DEMO 的伺服器。若 B 套件載入失敗，會顯示錯誤，不會以 A 的結果假冒 B。</p><section id="reviewPanel" style="margin-top:14px"><h2>讀音人工確認與修正</h2><p class="note">按「開始比較」後，只有含漢字的詞可以標記正確、錯誤或待確認；錯誤時可填入正確平假名。修正只影響下方的人工校正預覽，不會冒充分析器原始輸出。</p><div id="reviewSummary" class="status">請先執行比較</div><div class="bar"><button class="alt" id="resetReviews">清除本次標記</button><button class="alt" id="exportReviews">匯出確認結果 JSON</button></div><div id="reviewList"></div><h2 style="margin-top:16px">人工校正後預覽</h2><div id="reviewPreview" class="output"></div></section></main>
 <script>
 const $=id=>document.getElementById(id),sample=$('lyrics').value;
 let lastTokens=null,worker=null,requestId=0,pending=new Map(),workerReady=false;
@@ -78,6 +78,48 @@ $('aOutput').addEventListener('click',e=>{let el=e.target.closest('.edit-token')
 const v25ShowA=showA;showA=function(lines){v25ShowA(lines);v25Draw()};
 const v25Mode=$('mode').onchange;$('mode').onchange=()=>{v25Mode();v25Draw()};
 const v25Run=$('run').onclick;$('run').onclick=async()=>{v25Hash='';await v25Run();if(lastTokens)v25Draw()};
-let hint=document.createElement('p');hint.className='edit-hint';hint.textContent='V2.6：點擊 A 區含漢字的詞彙，即可修改讀音；支援單次／全曲套用與恢復自動讀音。';$('aOutput').before(hint);
+let hint=document.createElement('p');hint.className='edit-hint';hint.textContent='V2.7：點擊 A 區含漢字的詞彙，即可修改讀音；支援單次／全曲套用與恢復自動讀音。';$('aOutput').before(hint);
+</script>
+<script>
+/* V2.7: persist review snapshots across edits; align unchanged lines and tokens. */
+const v27SnapshotKey='furiganaReviewV27:lastSnapshot';
+function v27Read(k,fallback){try{return JSON.parse(localStorage.getItem(k)||'null')||fallback}catch(e){return fallback}}
+function v27Align(a,b,key){
+ const n=a.length,m=b.length,dp=Array.from({length:n+1},()=>new Uint16Array(m+1));
+ for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=key(a[i])===key(b[j])?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+ let i=0,j=0,pairs=[];while(i<n&&j<m){if(key(a[i])===key(b[j])){pairs.push([i++,j++])}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return pairs;
+}
+function v27Snapshot(){return {lyrics:$('lyrics').value,lines:lastTokens.map((ts,line)=>({text:($('lyrics').value.split(/\r?\n/).filter(x=>x.trim())[line]||''),tokens:ts.map((t,idx)=>{let x=reviewItems.find(z=>z.line===line&&z.idx===idx);return {surface:t.surface_form,reading:t.reading||'',state:x?.state||'pending',corrected:x?.corrected||'',once:v25Edits.once[v25Id(line,idx)]}})})),all:{...v25Edits.all}}}
+function v27SaveSnapshot(){if(!lastTokens||!reviewItems.length)return;try{localStorage.setItem(v27SnapshotKey,JSON.stringify(v27Snapshot()))}catch(e){}}
+const v27OldPersist=persistReviews;
+persistReviews=function(){v27OldPersist();v27SaveSnapshot()};
+const v27OldEditSave=v25Save;
+v25Save=function(){v27OldEditSave();v27SaveSnapshot()};
+const v27OldInit=initReviews;
+initReviews=function(lines){
+ const nextText=$('lyrics').value,nextHash=reviewHash(nextText),old=v27Read(v27SnapshotKey,null);
+ v27OldInit(lines);
+ const exact=v27Read(reviewStorePrefix+nextHash,null);
+ if(exact||!old?.lines?.length){v27SaveSnapshot();return}
+ const newLines=lines.map((tokens,i)=>({text:nextText.split(/\r?\n/).filter(x=>x.trim())[i]||'',tokens}));
+ let mappings=v27Align(old.lines,newLines,x=>x.text);
+ // For edited lines, preserve unchanged word sequences within the corresponding nearby line.
+ const mappedOld=new Set(mappings.map(x=>x[0])),mappedNew=new Set(mappings.map(x=>x[1]));
+ const leftoversOld=old.lines.map((_,i)=>i).filter(i=>!mappedOld.has(i));
+ const leftoversNew=newLines.map((_,i)=>i).filter(i=>!mappedNew.has(i));
+ for(let k=0;k<Math.min(leftoversOld.length,leftoversNew.length);k++)mappings.push([leftoversOld[k],leftoversNew[k]]);
+ const transferred={};
+ for(const [oi,ni] of mappings){
+  const ot=old.lines[oi].tokens,nt=newLines[ni].tokens;
+  for(const [a,b] of v27Align(ot,nt,t=>t.surface+'|'+(t.reading||''))){
+   const prior=ot[a],item=reviewItems.find(x=>x.line===ni&&x.idx===b);
+   if(item){item.state=prior.state||'pending';item.corrected=prior.corrected||''}
+   if(prior.once!==undefined)transferred[v25Id(ni,b)]=prior.once;
+  }
+ }
+ v25Hash=v25Key();v25Edits={once:transferred,all:{...(old.all||{})}};
+ v27OldEditSave();v27OldPersist();renderReviews();v27SaveSnapshot();
+};
+// Keep previous snapshot intact until the new analysis has finished; no premature overwrite.
 </script>
 </body></html>

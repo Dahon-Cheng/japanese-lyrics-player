@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V2.0 測試版</title>
+<title>日文同步歌詞 V2.1 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -34,9 +34,26 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 .furi-dialog{background:#202b3a;color:#fff;padding:20px;border-radius:14px;width:min(440px,100%);max-height:90vh;overflow:auto}
 .furi-dialog input[type=text]{width:100%;padding:10px;margin:10px 0;color:#111}
 .furi-dialog label{display:block;margin:10px 0}
+</style><style>
+/* V2.1: two distinct views, sharing the original player and song data */
+#viewBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+#viewBar button{flex:1;min-width:95px}
+#simplePlayback{margin:0 0 12px;text-align:center}
+#simplePlayback button{font-size:19px;min-width:64px;min-height:52px}
+#simplePlayback .mainPlay{min-width:95px;background:#222}
+body.view-listen #editToolbar,body.view-listen #timing,body.view-listen #furiganaControls,body.view-listen #lines .editline,body.view-listen #lines .fine{display:none!important}
+body.view-listen #lines .line{padding:17px 12px;font-size:clamp(20px,4vw,28px);text-align:center;line-height:2.05}
+body.view-listen #lines .line .time{display:none}
+body.view-listen #lines{min-height:180px;max-height:55vh;overflow-y:auto;scroll-behavior:smooth}
+body.view-listen #lines .line.active{background:#fff0a8}
+body.view-listen #play{max-width:760px;margin:auto}
+#listenModeBar{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:10px}
+#listenModeBar select{padding:9px;border-radius:9px;max-width:180px}
+body.view-edit #simplePlayback,body.view-edit #listenModeBar{display:none!important}
+@media(max-width:600px){body.view-listen #player{max-height:none!important}}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V2.0 測試版</h1>
+<h1>日文同步歌詞播放器 V2.1 測試版</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -57,7 +74,8 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 </div>
 
 <div id="play" class="hidden">
- <div class="toolbar row">
+<div id="viewBar"><button class="secondary" onclick="showHome()">← 歌曲庫</button><button id="listenTab" onclick="setPlayerView('listen')">♫ 播放頁面</button><button id="editTab" class="secondary" onclick="setPlayerView('edit')">✎ 編輯頁面</button></div>
+ <div class="toolbar row" id="editToolbar">
   <button class="secondary" onclick="showHome()">← 歌曲庫</button>
   <button onclick="toggleTiming()">半自動對時</button>
   <button class="secondary" onclick="shiftAll(-.1)">整首 −0.1s</button>
@@ -66,6 +84,8 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
  </div>
  <div class="card"><h2 id="nowTitle"></h2><div id="player"></div></div>
 
+<div id="simplePlayback" class="card"><div class="row" style="justify-content:center;align-items:center"><button class="secondary" onclick="listenJump(-1)" aria-label="上一句">⏮ 上一句</button><button id="listenPlayBtn" class="mainPlay" onclick="listenTogglePlay()" aria-label="播放或暫停">▶ 播放</button><button class="secondary" onclick="listenJump(1)" aria-label="下一句">下一句 ⏭</button></div><div class="muted">點選歌詞可從該句重播；暫停後按播放也會從選定句開頭重播。</div></div>
+<div id="listenModeBar"><label for="listenFuriMode">歌詞顯示</label><select id="listenFuriMode" onchange="listenChangeFuri(this.value)"><option value="original">原文</option><option value="ruby">振假名</option><option value="hiragana">全平假名</option></select></div>
  <div id="timing" class="card hidden timing-focus">
   <div><b>半自動對時</b><div class="muted">聽到中央歌詞開始時按「記錄下一句」。需要修歌詞時可先暫停，再合併或拆分。</div></div>
   <div id="timingStatus" class="time" style="text-align:center;margin:12px 0"></div>
@@ -267,7 +287,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V2.0 測試版 usability patch */
+/* V2.1 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -290,7 +310,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V2.0 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V2.1 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -427,7 +447,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V2.0 測試版: semi-auto timing can be reused, with explicit start-line selection. */
+/* V2.1 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -508,7 +528,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V2.0 測試版: clearly separate stored lyric timestamp from live YouTube time. */
+/* V2.1 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -607,7 +627,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V2.0 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V2.1 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -738,7 +758,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V2.0 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V2.1 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -924,4 +944,68 @@ function furiEdit(lineId,index){
  modal.querySelector('#furiRestore').onclick=()=>{delete token.once;delete furiRecords.all[token.surface];refresh()};
 }
 </script>
-</body></html>
+<script>
+/* V2.1 display-only separation: preserves jpSongsV1 and jpFuriganaV2 data. */
+let playerView='listen',listenSelectedIndex=null;
+function setPlayerView(view){
+ playerView=view==='edit'?'edit':'listen';
+ document.body.classList.toggle('view-listen',playerView==='listen');
+ document.body.classList.toggle('view-edit',playerView==='edit');
+ $('listenTab').className=playerView==='listen'?'':'secondary';
+ $('editTab').className=playerView==='edit'?'':'secondary';
+ if(playerView==='listen'){
+  timingMode=false;document.body.classList.remove('timing-on');
+  $('timing').classList.add('hidden');$('lines').classList.remove('hidden');
+ }
+ $('listenFuriMode').value=furiMode;
+ updateListenButton();
+}
+const v21OldOpenSong=openSong;
+openSong=function(id){v21OldOpenSong(id);listenSelectedIndex=null;setPlayerView('listen')};
+const v21OldShowHome=showHome;
+showHome=function(){document.body.classList.remove('view-listen','view-edit');v21OldShowHome()};
+const v21OldSeekLine=seekLine;
+seekLine=function(i){listenSelectedIndex=i;v21OldSeekLine(i);updateListenButton()};
+function listenChangeFuri(value){$('furiMode').value=value;furiModeChanged();$('listenFuriMode').value=value}
+function listenIndex(){
+ if(!current?.lines?.length)return -1;
+ if(listenSelectedIndex!=null&&current.lines[listenSelectedIndex]?.startTime!=null)return listenSelectedIndex;
+ if(activePlayLine!=null&&current.lines[activePlayLine]?.startTime!=null)return activePlayLine;
+ let t=player?.getCurrentTime?.()??0,idx=-1;
+ current.lines.forEach((line,i)=>{if(line.startTime!=null&&line.startTime<=t)idx=i});
+ return idx>=0?idx:current.lines.findIndex(l=>l.startTime!=null);
+}
+function listenTogglePlay(){
+ if(!player)return;
+ if(player.getPlayerState?.()===1){player.pauseVideo();updateListenButton();return}
+ const i=listenIndex();
+ if(i>=0){listenSelectedIndex=i;activePlayLine=i;player.seekTo(Math.max(0,current.lines[i].startTime),true)}
+ player.playVideo();setTimeout(updateListenButton,120)
+}
+function listenJump(step){
+ if(!current)return;
+ const valid=current.lines.map((l,i)=>l.startTime==null?-1:i).filter(i=>i>=0);
+ if(!valid.length)return;
+ const now=listenIndex(),at=valid.indexOf(now);
+ const target=valid[Math.max(0,Math.min(valid.length-1,(at<0?0:at)+step))];
+ seekLine(target)
+}
+function updateListenButton(){
+ const b=$('listenPlayBtn');if(!b)return;
+ const playing=player?.getPlayerState?.()===1;
+ b.textContent=playing?'❚❚ 暫停':'▶ 播放';b.setAttribute('aria-label',playing?'暫停':'從目前歌詞播放');
+}
+const v21OldUpdatePauseButton=updatePauseButton;
+updatePauseButton=function(){v21OldUpdatePauseButton();updateListenButton()};
+const v21OldSyncLine=syncLine;
+let v21LastLine=-1;
+syncLine=function(){
+ v21OldSyncLine();
+ if(playerView!=='listen'||!current)return;
+ const active=$('lines').querySelector('.line.active');
+ if(!active)return;
+ const index=Number(active.id.replace('line',''));
+ if(index!==v21LastLine){v21LastLine=index;active.scrollIntoView({block:'center',behavior:'smooth'});}
+ updateListenButton();
+};
+</script></body></html>

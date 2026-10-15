@@ -1,12 +1,12 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>日文振假名方案比較 DEMO V3.1</title><style>
-:root{color-scheme:dark;font-family:system-ui,'Noto Sans TC',sans-serif}body{margin:0;background:#101827;color:#e9eef7}main{max-width:950px;margin:auto;padding:18px}h1{font-size:1.5rem;margin:8px 0}p,.note{color:#b8c5d8;line-height:1.65}textarea{width:100%;box-sizing:border-box;background:#1d293a;color:white;border:1px solid #45546a;border-radius:10px;padding:12px;font-size:16px;line-height:1.7}button{background:#467fe9;color:white;border:0;border-radius:9px;padding:11px 15px;font-size:15px;cursor:pointer}button:disabled{opacity:.45}button.alt{background:#34445d}button:focus-visible{outline:2px solid white}.bar{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:680px){.cols{grid-template-columns:1fr}}section{background:#1c293a;border:1px solid #34445d;border-radius:13px;padding:15px;min-width:0}h2{font-size:1.1rem;margin:0 0 8px}.status{font-size:13px;color:#aabbd4;min-height:24px}.output{white-space:pre-wrap;overflow-wrap:anywhere;font-size:20px;line-height:2.6;min-height:100px}ruby rt{font-size:11px;color:#f7d88b}.warn{color:#ffbd86}.ok{color:#9bdfc2}.token{display:inline-block;margin:2px 3px 2px 0;padding:4px 7px;background:#26364b;border-radius:6px;font-size:13px}.token small{display:block;color:#f7d88b}.foot{font-size:13px;color:#aabbd4}select{background:#25364b;color:white;padding:9px;border:1px solid #566782;border-radius:8px}</style></head><body><main><h1>日文振假名方案比較 DEMO V3.1</h1><p>獨立測試，不會讀取或修改播放器的歌曲資料。請貼上歌詞，比較「Kuromoji 分詞＋自行組合 Ruby」與「Kuroshiro 轉換」。兩者若共用 Kuromoji 分析器，讀音結果通常相近。</p>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>日文振假名方案比較 DEMO V3.2</title><style>
+:root{color-scheme:dark;font-family:system-ui,'Noto Sans TC',sans-serif}body{margin:0;background:#101827;color:#e9eef7}main{max-width:950px;margin:auto;padding:18px}h1{font-size:1.5rem;margin:8px 0}p,.note{color:#b8c5d8;line-height:1.65}textarea{width:100%;box-sizing:border-box;background:#1d293a;color:white;border:1px solid #45546a;border-radius:10px;padding:12px;font-size:16px;line-height:1.7}button{background:#467fe9;color:white;border:0;border-radius:9px;padding:11px 15px;font-size:15px;cursor:pointer}button:disabled{opacity:.45}button.alt{background:#34445d}button:focus-visible{outline:2px solid white}.bar{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:680px){.cols{grid-template-columns:1fr}}section{background:#1c293a;border:1px solid #34445d;border-radius:13px;padding:15px;min-width:0}h2{font-size:1.1rem;margin:0 0 8px}.status{font-size:13px;color:#aabbd4;min-height:24px}.output{white-space:pre-wrap;overflow-wrap:anywhere;font-size:20px;line-height:2.6;min-height:100px}ruby rt{font-size:11px;color:#f7d88b}.warn{color:#ffbd86}.ok{color:#9bdfc2}.token{display:inline-block;margin:2px 3px 2px 0;padding:4px 7px;background:#26364b;border-radius:6px;font-size:13px}.token small{display:block;color:#f7d88b}.foot{font-size:13px;color:#aabbd4}select{background:#25364b;color:white;padding:9px;border:1px solid #566782;border-radius:8px}</style></head><body><main><h1>日文振假名方案比較 DEMO V3.2</h1><p>獨立測試，不會讀取或修改播放器的歌曲資料。請貼上歌詞，比較「Kuromoji 分詞＋自行組合 Ruby」與「Kuroshiro 轉換」。兩者若共用 Kuromoji 分析器，讀音結果通常相近。</p>
 <label for="lyrics">測試歌詞</label><textarea id="lyrics" rows="6">君の名前を呼んで
 明日も会えると信じている
 今日という日を忘れない
 生きている意味を探して</textarea>
 <div class="bar"><button id="run">開始比較</button><button class="alt" id="sample">還原範例</button><label>顯示 <select id="mode"><option value="furigana">漢字＋振假名</option><option value="hiragana">全平假名</option></select></label></div>
 <div id="global" class="status" aria-live="polite">尚未開始。第一次使用需要下載分析字典。</div><div class="cols"><section><h2>A｜Kuromoji.js</h2><div id="aStatus" class="status">待測試</div><div id="aOutput" class="output"></div><details><summary>檢視斷詞／讀音</summary><div id="tokens"></div></details></section><section><h2>B｜Kuroshiro + Kuromoji</h2><div id="bStatus" class="status">待測試</div><div id="bOutput" class="output"></div></section></div>
-<p class="foot">本 DEMO 不呼叫任何辨識 API。V3.1 僅含漢字詞彙需要確認，非漢字仍正常顯示。首次載入 JavaScript 套件與字典需要網路，之後的歌詞分析在瀏覽器內執行。測試資料不會上傳到本 DEMO 的伺服器。若 B 套件載入失敗，會顯示錯誤，不會以 A 的結果假冒 B。</p><section id="reviewPanel" style="margin-top:14px"><h2>讀音人工確認與修正</h2><p class="note">按「開始比較」後，只有含漢字的詞可以標記正確、錯誤或待確認；錯誤時可填入正確平假名。修正只影響下方的人工校正預覽，不會冒充分析器原始輸出。</p><div id="reviewSummary" class="status">請先執行比較</div><div class="bar"><button class="alt" id="resetReviews">清除本次標記</button><button class="alt" id="exportReviews">匯出確認結果 JSON</button></div><div id="reviewList"></div><h2 style="margin-top:16px">人工校正後預覽</h2><div id="reviewPreview" class="output"></div></section></main>
+<p class="foot">本 DEMO 不呼叫任何辨識 API。V3.2 僅含漢字詞彙需要確認，非漢字仍正常顯示。首次載入 JavaScript 套件與字典需要網路，之後的歌詞分析在瀏覽器內執行。測試資料不會上傳到本 DEMO 的伺服器。若 B 套件載入失敗，會顯示錯誤，不會以 A 的結果假冒 B。</p><section id="reviewPanel" style="margin-top:14px"><h2>讀音人工確認與修正</h2><p class="note">按「開始比較」後，只有含漢字的詞可以標記正確、錯誤或待確認；錯誤時可填入正確平假名。修正只影響下方的人工校正預覽，不會冒充分析器原始輸出。</p><div id="reviewSummary" class="status">請先執行比較</div><div class="bar"><button class="alt" id="resetReviews">清除本次標記</button><button class="alt" id="exportReviews">匯出確認結果 JSON</button></div><div id="reviewList"></div><h2 style="margin-top:16px">人工校正後預覽</h2><div id="reviewPreview" class="output"></div></section></main>
 <script>
 const $=id=>document.getElementById(id),sample=$('lyrics').value;
 let lastTokens=null,worker=null,requestId=0,pending=new Map(),workerReady=false;
@@ -78,10 +78,10 @@ $('aOutput').addEventListener('click',e=>{let el=e.target.closest('.edit-token')
 const v25ShowA=showA;showA=function(lines){v25ShowA(lines);v25Draw()};
 const v25Mode=$('mode').onchange;$('mode').onchange=()=>{v25Mode();v25Draw()};
 const v25Run=$('run').onclick;$('run').onclick=async()=>{v25Hash='';await v25Run();if(lastTokens)v25Draw()};
-let hint=document.createElement('p');hint.className='edit-hint';hint.textContent='V3.1：點擊 A 區含漢字的詞彙，即可修改讀音；支援單次／全曲套用與恢復自動讀音。';$('aOutput').before(hint);
+let hint=document.createElement('p');hint.className='edit-hint';hint.textContent='V3.2：點擊 A 區含漢字的詞彙，即可修改讀音；支援單次／全曲套用與恢復自動讀音。';$('aOutput').before(hint);
 </script>
 <script>
-/* V3.1: persist review snapshots across edits; align unchanged lines and tokens. */
+/* V3.2: persist review snapshots across edits; align unchanged lines and tokens. */
 const v27SnapshotKey='furiganaReviewV27:lastSnapshot';
 function v27Read(k,fallback){try{return JSON.parse(localStorage.getItem(k)||'null')||fallback}catch(e){return fallback}}
 function v27Align(a,b,key){
@@ -128,7 +128,7 @@ initReviews=function(lines){
 </script>
 
 <script>
-/* V3.1: preserve reviewed words across deletions/insertions of lyric lines.
+/* V3.2: preserve reviewed words across deletions/insertions of lyric lines.
    Use last saved snapshot BEFORE replacing current analysis results. */
 const v29BaseInit=v27OldInit;
 initReviews=function(lines){
@@ -163,7 +163,7 @@ initReviews=function(lines){
 };
 </script>
 <script>
-/* V3.1: capture previous review state BEFORE asynchronous analysis clears it.
+/* V3.2: capture previous review state BEFORE asynchronous analysis clears it.
    Restore by unchanged lines first, then by unchanged tokens in edited lines. */
 let v30Before=null;
 const v30PreviousRun=$('run').onclick;
@@ -212,7 +212,7 @@ initReviews=function(lines){
 </script>
 
 <script>
-/* V3.1: stable analysis text and non-destructive review migration.
+/* V3.2: stable analysis text and non-destructive review migration.
    Previous versions captured the already-edited textarea as if it were the old
    analyzed lyric, so deleting a line invalidated all alignment. */
 let v31AnalyzedText=null;
@@ -246,5 +246,108 @@ $('run').onclick=async function(){
     v31AnalyzedText=oldText;
   }
 };
+</script>
+<script>
+/* V3.2 single owner for analysis + review persistence. Capture listener bypasses
+   ALL inherited run onclick wrappers; review snapshots are never made from edited input. */
+(()=>{
+ const KEY='furiganaV32:current';
+ const $debug=document.createElement('div');
+ $debug.id='v32Debug';$debug.className='status';$debug.style.cssText='white-space:pre-wrap;padding:10px;background:#142236;border-radius:8px;margin-top:10px';
+ $('reviewSummary').after($debug);
+ const linesOf=text=>text.split(/\r?\n/).filter(x=>x.trim());
+ const getSaved=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch{return null}};
+ let current=getSaved();
+ function snapshot(){
+  if(!lastTokens||!reviewItems.length)return current;
+  const texts=linesOf(current?.text||$('lyrics').value);
+  return {text:current?.text||$('lyrics').value,lines:lastTokens.map((ts,i)=>({text:texts[i]||'',tokens:ts.map((t,j)=>{
+   const x=reviewItems.find(z=>z.line===i&&z.idx===j);
+   return {surface:t.surface_form,reading:t.reading||'',state:x?.state||'pending',corrected:x?.corrected||'',once:v25Edits.once[v25Id(i,j)]};
+  })})),all:{...v25Edits.all}};
+ }
+ function save(){
+  if(!current||!lastTokens)return;
+  current=snapshot();
+  try{localStorage.setItem(KEY,JSON.stringify(current))}catch(e){$debug.textContent='儲存失敗：'+e.message}
+ }
+ // Replace old persistence wrapper so it cannot save an out-of-sync snapshot.
+ persistReviews=function(){
+  try{localStorage.setItem(reviewStorePrefix+reviewKey,JSON.stringify(reviewItems.map(({state,corrected})=>({state,corrected}))))}catch(e){}
+  save();
+ };
+ v25Save=function(){
+  try{localStorage.setItem(v25Hash,JSON.stringify(v25Edits))}catch(e){}
+  save();
+ };
+ function pairs(a,b,key){return v27Align(a,b,key)}
+ function transfer(old,newLines,text){
+  const newTexts=linesOf(text),newRecord=newLines.map((ts,i)=>({text:newTexts[i]||'',tokens:ts}));
+  const oldLines=old?.lines||[];
+  const linePairs=pairs(oldLines,newRecord,x=>x.text);
+  const usedOld=new Set(linePairs.map(p=>p[0])),usedNew=new Set(linePairs.map(p=>p[1]));
+  const spareOld=oldLines.map((_,i)=>i).filter(i=>!usedOld.has(i));
+  const spareNew=newRecord.map((_,i)=>i).filter(i=>!usedNew.has(i));
+  // Only pair modified lines if their position is plausible; deleted lines are not mapped.
+  for(let k=0;k<Math.min(spareOld.length,spareNew.length);k++)linePairs.push([spareOld[k],spareNew[k]]);
+  const migrated=new Map(),once={},counts={before:0,moved:0,newPending:0};
+  oldLines.forEach(line=>line.tokens.forEach(t=>{if(t.state==='ok'||t.state==='wrong')counts.before++}));
+  for(const [oi,ni] of linePairs){
+   const oldT=oldLines[oi].tokens,newT=newRecord[ni].tokens;
+   for(const [a,b] of pairs(oldT,newT,t=>t.surface||t.surface_form)){
+    const prev=oldT[a],idx=ni+':'+b;
+    migrated.set(idx,{state:prev.state||'pending',corrected:prev.corrected||''});
+    if(prev.once!==undefined)once[idx]=prev.once;
+    if(prev.state==='ok'||prev.state==='wrong')counts.moved++;
+   }
+  }
+  return {migrated,once,all:old?.all||{},counts};
+ }
+ // Intercept before old onclick handlers; keep Worker and rendering functions intact.
+ $('run').addEventListener('click',async e=>{
+  e.preventDefault();e.stopImmediatePropagation();
+  const b=$('run'),text=$('lyrics').value,old=current?structuredClone(current):null;
+  b.disabled=true;$('aStatus').textContent='分析中…';$debug.textContent='分析中，舊確認資料已保留…';
+  const start=performance.now();
+  try{
+   const result=await workerRequest('analyze',text);
+   const lines=result.lines;
+   // Exact text: use saved current, otherwise migrate by stable line text.
+   let source=old;
+   if(!source){
+    const legacy=v27Read('furiganaReviewV27:lastSnapshot',null);
+    if(legacy?.lines?.length)source={text:legacy.lyrics,lines:legacy.lines,all:legacy.all||{}};
+   }
+   const moved=transfer(source,lines,text);
+   const exact=source?.text===text;
+   lastTokens=lines;
+   reviewKey=reviewHash(text);
+   const oldExact=v27Read(reviewStorePrefix+reviewKey,null);
+   reviewItems=lines.flatMap((ts,line)=>ts.map((t,idx)=>{
+    const item=moved.migrated.get(line+':'+idx)||{};
+    return {line,idx,surface:t.surface_form,reading:t.reading||'',state:item.state||'pending',corrected:item.corrected||''};
+   }));
+   // Legacy exact-hash states only if there is no matching V3.2 source.
+   if(!source && Array.isArray(oldExact))reviewItems.forEach((x,i)=>{
+    if(oldExact[i]){x.state=oldExact[i].state||'pending';x.corrected=oldExact[i].corrected||''}
+   });
+   v25Hash=v25Key();
+   v25Edits={once:moved.once,all:{...moved.all}};
+   current={text,lines:[],all:{}};
+   // Render without calling inherited showA/initReviews (which reset the data).
+   v25Draw();renderReviews();
+   save();
+   const eligible=reviewItems.filter(x=>hasKanji(x.surface));
+   const confirmed=eligible.filter(x=>x.state==='ok'||x.state==='wrong').length;
+   const newPending=eligible.length-confirmed;
+   $debug.textContent=`V3.2 資料追蹤：舊版已確認 ${moved.counts.before} 詞 → 本次成功轉移 ${confirmed} 詞 → 待確認 ${newPending} 詞。\n比對方式：${exact?'相同歌詞':'逐句／逐詞對應'}；分析行數：${lines.length}。`;
+   $('aStatus').textContent='完成 · '+Math.round(performance.now()-start)+' ms';
+   $('global').textContent='V3.2 分析完成，確認狀態已處理。';await runB();
+  }catch(err){$('aStatus').textContent='分析失敗';$('global').textContent=err.message;$debug.textContent='分析失敗，舊確認紀錄未覆蓋：'+err.message}
+  finally{b.disabled=false}
+ },true);
+ // Marking changes are persisted by the overridden persistReviews.
+ // Correction-dialog edits are persisted by overridden v25Save.
+})();
 </script>
 </body></html>

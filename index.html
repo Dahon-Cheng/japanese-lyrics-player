@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V2.3 測試版</title>
+<title>日文同步歌詞 V2.4 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -35,7 +35,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 .furi-dialog input[type=text]{width:100%;padding:10px;margin:10px 0;color:#111}
 .furi-dialog label{display:block;margin:10px 0}
 </style><style>
-/* V2.3: two distinct views, sharing the original player and song data */
+/* V2.4: two distinct views, sharing the original player and song data */
 #viewBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
 #viewBar button{flex:1;min-width:95px}
 #simplePlayback{margin:0 0 12px;text-align:center}
@@ -52,7 +52,7 @@ body.view-listen #play{max-width:760px;margin:auto}
 body.view-edit #simplePlayback,body.view-edit #listenModeBar{display:none!important}
 @media(max-width:600px){body.view-listen #player{max-height:none!important}}
 </style><style>
-/* V2.3: playback-only inline controls and no furigana editing in listening mode */
+/* V2.4: playback-only inline controls and no furigana editing in listening mode */
 body.view-listen #simplePlayback{display:none!important}
 body.view-listen #lines .furi-token{pointer-events:none;cursor:inherit;border-bottom:0}
 body.view-listen #lines .listen-line-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin:5px 0 0;line-height:1}
@@ -61,9 +61,14 @@ body.view-edit #lines .listen-line-controls{display:none!important}
 .listen-line-controls button.listen-line-main{width:48px;height:42px;font-size:21px}
 .listen-line-controls button:disabled{opacity:.3}
 body.view-listen #lines .line{padding-bottom:13px}
+</style><style>
+/* V2.4: prevent browser ruby compression from shifting mixed Japanese text */
+#lines ruby,#fineLines ruby{ruby-position:over;vertical-align:baseline;white-space:nowrap}
+#lines rt,#fineLines rt{font-size:.52em;text-align:center;line-height:1.15;font-weight:normal}
+#lines .furi-token,#fineLines .furi-token{white-space:nowrap}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V2.3 測試版</h1>
+<h1>日文同步歌詞播放器 V2.4 測試版</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -297,7 +302,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V2.3 測試版 usability patch */
+/* V2.4 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -320,7 +325,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V2.3 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V2.4 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -457,7 +462,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V2.3 測試版: semi-auto timing can be reused, with explicit start-line selection. */
+/* V2.4 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -538,7 +543,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V2.3 測試版: clearly separate stored lyric timestamp from live YouTube time. */
+/* V2.4 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -637,7 +642,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V2.3 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V2.4 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -768,7 +773,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V2.3 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V2.4 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -869,6 +874,39 @@ function furiGet(id){try{return JSON.parse(localStorage.getItem(furiStoreKey(id)
 function furiPut(){if(!current)return;try{localStorage.setItem(furiStoreKey(current.songId),JSON.stringify(furiRecords))}catch(e){$('furiStatus').textContent='無法儲存振假名：'+e.message}}
 function furiLines(){return current?.lines||[]}
 function furiRecord(line){return furiRecords?.lines?.find(x=>x.lineId===line.lineId&&x.text===line.text)||furiRecords?.lines?.find(x=>x.text===line.text)}
+
+/* V2.4: align kana already present in the source as anchors; annotate kanji only. */
+function furiRubyMixed(surface,reading){
+ const parts=surface.match(/[\u3400-\u9fff々〆ヶ]+|[^\u3400-\u9fff々〆ヶ]+/gu)||[];
+ const isKanji=p=>furiKanji(p);
+ let pos=0,html='';
+ for(let i=0;i<parts.length;i++){
+  const part=parts[i];
+  if(!isKanji(part)){
+   const anchor=furiHira(part);
+   if(reading.slice(pos,pos+anchor.length)!==anchor){
+    // Tokenizer reading and written kana do not align: avoid misleading ruby.
+    return '<ruby>'+esc(surface)+'<rt>'+esc(reading)+'</rt></ruby>';
+   }
+   html+=esc(part);pos+=anchor.length;
+  }else{
+   const next=parts[i+1];
+   let end=reading.length;
+   if(next&&!isKanji(next)){
+    const anchor=furiHira(next);
+    end=reading.indexOf(anchor,pos);
+    if(end<pos)return '<ruby>'+esc(surface)+'<rt>'+esc(reading)+'</rt></ruby>';
+   }
+   const ruby=reading.slice(pos,end);
+   if(!ruby)return esc(surface);
+   html+='<ruby>'+esc(part)+'<rt>'+esc(ruby)+'</rt></ruby>';
+   pos=end;
+  }
+ }
+ if(pos!==reading.length)return '<ruby>'+esc(surface)+'<rt>'+esc(reading)+'</rt></ruby>';
+ return html;
+}
+
 function furiText(line,index){
  if(furiMode==='original')return esc(line.text);
  const record=furiRecord(line);
@@ -881,11 +919,7 @@ function furiText(line,index){
   if(furiMode==='hiragana')display=esc(read&&read!=='*'?hira:surface);
   else if(!furiKanji(surface)||!read||read==='*')display=esc(surface);
   else{
-   let lead=(surface.match(/^[ぁ-ゖァ-ヺー]+/)||[''])[0],tail=(surface.match(/[ぁ-ゖァ-ヺー]+$/)||[''])[0],r=hira;
-   if(lead&&r.startsWith(furiHira(lead)))r=r.slice(furiHira(lead).length);else lead='';
-   if(tail&&r.endsWith(furiHira(tail)))r=r.slice(0,-furiHira(tail).length);else tail='';
-   const middle=surface.slice(lead.length,surface.length-tail.length);
-   display=esc(lead)+(middle?'<ruby>'+esc(middle)+'<rt>'+esc(r||hira)+'</rt></ruby>':'')+esc(tail);
+   display=furiRubyMixed(surface,hira);
   }
   return furiKanji(surface)?`<span class="furi-token" onclick="event.stopPropagation();furiEdit('${line.lineId}',${j})">${display}</span>`:display;
  }).join('');
@@ -955,7 +989,7 @@ function furiEdit(lineId,index){
 }
 </script>
 <script>
-/* V2.3 display-only separation: preserves jpSongsV1 and jpFuriganaV2 data. */
+/* V2.4 display-only separation: preserves jpSongsV1 and jpFuriganaV2 data. */
 let playerView='listen',listenSelectedIndex=null;
 function setPlayerView(view){
  playerView=view==='edit'?'edit':'listen';
@@ -1020,7 +1054,7 @@ syncLine=function(){
 };
 </script>
 <script>
-/* V2.3: controls are rendered inside each lyric row in listening view. */
+/* V2.4: controls are rendered inside each lyric row in listening view. */
 const v22RenderLines=renderLines;
 renderLines=function(){
  v22RenderLines();
@@ -1073,7 +1107,7 @@ const v22SetPlayerView=setPlayerView;
 setPlayerView=function(view){v22SetPlayerView(view);v22UpdateButtons()};
 </script>
 <script>
-/* V2.3: when playback naturally advances, current lyric is determined by
+/* V2.4: when playback naturally advances, current lyric is determined by
    video time rather than stale manual-selection index. */
 function v23CurrentLine(){
  if(!current?.lines?.length)return -1;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V2.8 測試版</title>
+<title>日文同步歌詞 V2.9 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -35,7 +35,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 .furi-dialog input[type=text]{width:100%;padding:10px;margin:10px 0;color:#111}
 .furi-dialog label{display:block;margin:10px 0}
 </style><style>
-/* V2.8: two distinct views, sharing the original player and song data */
+/* V2.9: two distinct views, sharing the original player and song data */
 #viewBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
 #viewBar button{flex:1;min-width:95px}
 #simplePlayback{margin:0 0 12px;text-align:center}
@@ -52,7 +52,7 @@ body.view-listen #play{max-width:760px;margin:auto}
 body.view-edit #simplePlayback,body.view-edit #listenModeBar{display:none!important}
 @media(max-width:600px){body.view-listen #player{max-height:none!important}}
 </style><style>
-/* V2.8: playback-only inline controls and no furigana editing in listening mode */
+/* V2.9: playback-only inline controls and no furigana editing in listening mode */
 body.view-listen #simplePlayback{display:none!important}
 body.view-listen #lines .furi-token{pointer-events:none;cursor:inherit;border-bottom:0}
 body.view-listen #lines .listen-line-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin:5px 0 0;line-height:1}
@@ -62,12 +62,12 @@ body.view-edit #lines .listen-line-controls{display:none!important}
 .listen-line-controls button:disabled{opacity:.3}
 body.view-listen #lines .line{padding-bottom:13px}
 </style><style>
-/* V2.8: prevent browser ruby compression from shifting mixed Japanese text */
+/* V2.9: prevent browser ruby compression from shifting mixed Japanese text */
 #lines ruby,#fineLines ruby{ruby-position:over;vertical-align:baseline;white-space:nowrap}
 #lines rt,#fineLines rt{font-size:.52em;text-align:center;line-height:1.15;font-weight:normal}
 #lines .furi-token,#fineLines .furi-token{white-space:nowrap}
 </style><style>
-/* V2.8: compact category controls and a fixed mode switch. */
+/* V2.9: compact category controls and a fixed mode switch. */
 .category-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}
 .category-toolbar select{min-width:130px;flex:1;padding:10px;border-radius:9px;max-width:300px}
 .category-picker{padding:9px 0}.category-picker label{display:inline-flex;align-items:center;gap:6px;margin:4px 8px 4px 0;padding:8px 10px;background:#f0f1f3;border-radius:9px}.category-picker input{width:auto;margin:0}
@@ -80,7 +80,7 @@ body.view-listen #lines{padding-bottom:75px}
 body.view-edit #lines{padding-bottom:75px}
 #lines .furi-token{touch-action:manipulation}
 </style><style>
-/* V2.8 library-first homepage: categories above, songs below */
+/* V2.9 library-first homepage: categories above, songs below */
 .home-library{padding:18px 20px}
 .library-heading,.library-results-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .library-heading h2{margin:4px 0 14px;font-size:23px}
@@ -108,16 +108,16 @@ body.view-edit #lines{padding-bottom:75px}
 @media(max-width:600px){.home-library{padding:15px 12px}.library-category{padding:12px 9px}.library-heading h2{font-size:22px}}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V2.8 測試版</h1>
+<h1>日文同步歌詞播放器 V2.9 測試版</h1>
 
 <div id="home" class="card home-library">
- <div class="library-heading"><h2>我的歌曲庫</h2><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類">▣＋</button></div>
+ <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類">▣＋</button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原">⇅</button></div></div>
  <input id="search" type="search" placeholder="⌕ 搜尋歌曲、歌手、分類" oninput="renderSongs()" aria-label="搜尋歌曲、歌手、分類">
  <select id="categoryFilter" class="hidden" aria-label="目前分類"><option value="all">所有歌曲</option></select>
  <div id="libraryCategories" class="library-categories"></div>
  <div class="library-results-heading"><h3 id="librarySelectedName">所有歌曲</h3><span id="libraryResultCount" class="muted"></span></div>
  <div id="songs" class="library-song-list"></div>
- <div class="library-footer"><button onclick="newSong()">＋ 新增歌曲</button><button class="secondary" onclick="manageCategories()">管理分類</button><details><summary>備份／還原</summary><div class="row"><button class="secondary" onclick="exportAll()">匯出備份</button><label><input id="importFile" type="file" accept="application/json" hidden onchange="importAll(this.files[0])"><button class="secondary" onclick="importFile.click()">匯入備份</button></label></div></details></div>
+ <div class="library-footer"><button onclick="newSong()">＋ 新增歌曲</button><input id="importFile" type="file" accept="application/json,.json" hidden onchange="v29ImportFile(this)"></div>
 </div>
 
 <div id="editor" class="card hidden">
@@ -343,7 +343,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V2.8 測試版 usability patch */
+/* V2.9 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};if(typeof saveEditorCategories==='function')saveEditorCategories(obj.songId);let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -366,7 +366,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V2.8 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V2.9 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -503,7 +503,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V2.8 測試版: semi-auto timing can be reused, with explicit start-line selection. */
+/* V2.9 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -584,7 +584,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V2.8 測試版: clearly separate stored lyric timestamp from live YouTube time. */
+/* V2.9 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -683,7 +683,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V2.8 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V2.9 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -814,7 +814,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V2.8 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V2.9 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -916,7 +916,7 @@ function furiPut(){if(!current)return;try{localStorage.setItem(furiStoreKey(curr
 function furiLines(){return current?.lines||[]}
 function furiRecord(line){return furiRecords?.lines?.find(x=>x.lineId===line.lineId&&x.text===line.text)||furiRecords?.lines?.find(x=>x.text===line.text)}
 
-/* V2.8: align kana already present in the source as anchors; annotate kanji only. */
+/* V2.9: align kana already present in the source as anchors; annotate kanji only. */
 function furiRubyMixed(surface,reading){
  const parts=surface.match(/[\u3400-\u9fff々〆ヶ]+|[^\u3400-\u9fff々〆ヶ]+/gu)||[];
  const isKanji=p=>furiKanji(p);
@@ -1038,7 +1038,7 @@ function furiEdit(lineId,index){
 }
 </script>
 <script>
-/* V2.8 display-only separation: preserves jpSongsV1 and jpFuriganaV2 data. */
+/* V2.9 display-only separation: preserves jpSongsV1 and jpFuriganaV2 data. */
 let playerView='listen',listenSelectedIndex=null;
 function setPlayerView(view){
  playerView=view==='edit'?'edit':'listen';
@@ -1103,7 +1103,7 @@ syncLine=function(){
 };
 </script>
 <script>
-/* V2.8: controls are rendered inside each lyric row in listening view. */
+/* V2.9: controls are rendered inside each lyric row in listening view. */
 const v22RenderLines=renderLines;
 renderLines=function(){
  v22RenderLines();
@@ -1156,7 +1156,7 @@ const v22SetPlayerView=setPlayerView;
 setPlayerView=function(view){v22SetPlayerView(view);v22UpdateButtons()};
 </script>
 <script>
-/* V2.8: when playback naturally advances, current lyric is determined by
+/* V2.9: when playback naturally advances, current lyric is determined by
    video time rather than stale manual-selection index. */
 function v23CurrentLine(){
  if(!current?.lines?.length)return -1;
@@ -1184,7 +1184,7 @@ syncLine=function(){
 </script>
 
 <script>
-/* V2.8: offline Hepburn/Kunrei romaji input. Japanese keyboard is optional.
+/* V2.9: offline Hepburn/Kunrei romaji input. Japanese keyboard is optional.
    Original kana field remains editable and existing saved readings are unchanged. */
 const furiRomanTable=(()=>{
  const m={};
@@ -1239,14 +1239,14 @@ function furiRomajiConvert(input){
 }
 </script>
 <script>
-/* V2.8: lightweight display offset, independent from saved song timestamps. */
+/* V2.9: lightweight display offset, independent from saved song timestamps. */
 let v26Lead=(()=>{const n=Number(localStorage.getItem('jpLyricDisplayLeadV26'));return Number.isFinite(n)&&n>=0&&n<=0.5?n:0.12})();
 function v26SetLead(value){v26Lead=Math.max(0,Math.min(0.5,Number(value)||0));localStorage.setItem('jpLyricDisplayLeadV26',String(v26Lead));document.getElementById('lyricLeadValue').textContent=v26Lead.toFixed(2);v19Tick();syncLine()}
 document.getElementById('lyricLead').value=String(v26Lead);
 document.getElementById('lyricLeadValue').textContent=v26Lead.toFixed(2);
 </script>
 <script>
-/* V2.8: category metadata is separate from jpSongsV1 and jpFuriganaV2. */
+/* V2.9: category metadata is separate from jpSongsV1 and jpFuriganaV2. */
 const v27CategoryKey='jpSongCategoriesV27';
 let v27Categories=(()=>{try{const d=JSON.parse(localStorage.getItem(v27CategoryKey)||'{}');return {names:Array.isArray(d.names)?d.names:[],membership:d.membership&&typeof d.membership==='object'?d.membership:{}}}catch{return {names:[],membership:{}}}})();
 function v27SaveCategories(){localStorage.setItem(v27CategoryKey,JSON.stringify(v27Categories))}
@@ -1354,7 +1354,7 @@ openSong=function(id){v27OpenSong(id);$('quickViewSwitch').classList.remove('hid
 // Modal sits above the player; clicks inside it do not reach lyric rows.
 v27RefreshCategoryFilter();renderSongs();
 </script><script>
-/* V2.8 library UI only. Uses existing V2.7 category storage and song IDs. */
+/* V2.9 library UI only. Uses existing V2.7 category storage and song IDs. */
 let v28Selected='all';
 function v28CategorySelect(value){
  v28Selected=value;
@@ -1386,7 +1386,7 @@ renderSongs=function(){
   return value==='all'||(value==='uncategorized'?!tags.length:tags.includes(v27Categories.names[Number(value.slice(1))]));
  }).length;
  const entries=[{value:'all',name:'所有歌曲',icon:'▥'},...v27Categories.names.map((name,i)=>({value:'c'+i,name,icon:'▱'})),{value:'uncategorized',name:'未分類',icon:'▱'}];
- $('libraryCategories').innerHTML=entries.map(c=>`<button class="library-category ${v28Selected===c.value?'selected':''}" onclick="v28CategorySelect('${c.value}')" aria-pressed="${v28Selected===c.value}"><span class="category-icon">${c.icon}</span><span class="category-name">${esc(c.name)}</span><span class="category-count">${countFor(c.value)}</span><span class="category-arrow">›</span></button>`).join('');
+ $('libraryCategories').innerHTML=entries.map(c=>`<button class="library-category ${v28Selected===c.value?'selected':''}" data-category-value="${c.value}" onclick="v29CategoryClick(event,'${c.value}')" aria-pressed="${v28Selected===c.value}"><span class="category-icon">${c.icon}</span><span class="category-name">${esc(c.name)}</span><span class="category-count">${countFor(c.value)}</span><span class="category-arrow">›</span></button>`).join('');
  const selected=entries.find(x=>x.value===v28Selected);
  $('librarySelectedName').textContent=query?'搜尋結果':selected?.name||'所有歌曲';
  const matching=songs.filter(song=>{
@@ -1400,4 +1400,108 @@ renderSongs=function(){
  $('songs').innerHTML=matching.map(song=>`<div class="library-song"><button class="library-song-open" onclick="openSong('${song.songId}')"><span class="music-icon">♫</span><span class="library-song-info"><span class="library-song-title">${esc(song.title)}</span><span class="library-song-meta">${esc(song.artist||'未填歌手')} · ${song.lines.filter(x=>x.startTime!=null).length}/${song.lines.length} 句已對時</span></span></button><button class="library-song-menu" onclick="v28Menu('${song.songId}')" aria-label="管理歌曲 ${esc(song.title)}">⋯</button></div>`).join('')||'<p class="muted">沒有符合條件的歌曲。</p>';
 };
 renderSongs();
-</script></body></html>
+</script><style>
+.library-top-actions{display:flex;align-items:center;gap:7px}
+.library-top-actions .icon-btn{font-size:24px;min-width:43px;min-height:43px}
+.library-category{touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.library-footer{margin-top:18px}
+</style>
+<script>
+/* V2.9: long-press category management, whole-library backup and restore. */
+let v29HoldTimer=null,v29HoldHandled=false,v29PointerStart=null;
+function v29CategoryClick(event,value){
+ if(v29HoldHandled){event.preventDefault();v29HoldHandled=false;return}
+ v28CategorySelect(value);
+}
+function v29CancelHold(){if(v29HoldTimer!==null){clearTimeout(v29HoldTimer);v29HoldTimer=null}}
+function v29OpenCategoryMenu(value){
+ if(!value.startsWith('c'))return;
+ const name=v27Categories.names[Number(value.slice(1))];if(!name)return;
+ const panel=document.createElement('div');panel.className='furi-overlay';
+ panel.innerHTML=`<div class="furi-dialog" role="dialog" aria-modal="true"><h3>管理分類：${esc(name)}</h3><div class="row"><button id="v29Rename">✎ 重新命名</button><button class="danger" id="v29Delete">刪除分類</button><button class="secondary" id="v29Close">取消</button></div><p class="muted">刪除分類不會刪除任何歌曲。</p></div>`;
+ document.body.appendChild(panel);
+ const close=()=>panel.remove();panel.onclick=e=>{if(e.target===panel)close()};
+ panel.querySelector('#v29Close').onclick=close;
+ panel.querySelector('#v29Rename').onclick=()=>{
+  close();const newName=prompt('重新命名分類',name)?.trim();
+  if(!newName||newName===name)return;
+  if(v27Categories.names.includes(newName)){alert('分類名稱已存在');return}
+  const i=v27Categories.names.indexOf(name);if(i<0)return;
+  v27Categories.names[i]=newName;
+  for(const id of Object.keys(v27Categories.membership))v27Categories.membership[id]=(v27Categories.membership[id]||[]).map(n=>n===name?newName:n);
+  v27SaveCategories();renderSongs();
+  if(!$('editor').classList.contains('hidden'))renderEditorCategories(current?.songId||null);
+ };
+ panel.querySelector('#v29Delete').onclick=()=>{
+  close();if(!confirm(`刪除分類「${name}」？\n歌曲、歌詞、對時與讀音修正都會保留。`))return;
+  v27Categories.names=v27Categories.names.filter(n=>n!==name);
+  for(const id of Object.keys(v27Categories.membership))v27Categories.membership[id]=(v27Categories.membership[id]||[]).filter(n=>n!==name);
+  v27SaveCategories();v28Selected='all';renderSongs();
+  if(!$('editor').classList.contains('hidden'))renderEditorCategories(current?.songId||null);
+ };
+}
+// Delegate listeners: renderSongs replaces category buttons after every filter.
+$('libraryCategories').addEventListener('pointerdown',e=>{
+ const btn=e.target.closest('.library-category');if(!btn)return;
+ v29CancelHold();v29HoldHandled=false;
+ v29PointerStart={x:e.clientX,y:e.clientY,value:btn.dataset.categoryValue};
+ if(!v29PointerStart.value.startsWith('c'))return;
+ v29HoldTimer=setTimeout(()=>{
+  v29HoldTimer=null;v29HoldHandled=true;
+  if(navigator.vibrate)navigator.vibrate(20);
+  v29OpenCategoryMenu(v29PointerStart.value);
+ },550);
+});
+$('libraryCategories').addEventListener('pointermove',e=>{
+ if(v29PointerStart&&Math.hypot(e.clientX-v29PointerStart.x,e.clientY-v29PointerStart.y)>12)v29CancelHold();
+});
+for(const event of ['pointerup','pointercancel','pointerleave'])$('libraryCategories').addEventListener(event,v29CancelHold);
+$('libraryCategories').addEventListener('contextmenu',e=>{
+ const btn=e.target.closest('.library-category');if(!btn||!btn.dataset.categoryValue.startsWith('c'))return;
+ e.preventDefault();v29CancelHold();
+ if(!v29HoldHandled){v29HoldHandled=true;v29OpenCategoryMenu(btn.dataset.categoryValue)}
+});
+function v29BackupMenu(){
+ const panel=document.createElement('div');panel.className='furi-overlay';
+ panel.innerHTML='<div class="furi-dialog" role="dialog" aria-modal="true"><h3>完整資料庫備份／還原</h3><p>包含歌曲、歌詞、對時、自訂分類、振假名分析及手動讀音修正。</p><div class="row"><button id="v29Export">↓ 匯出完整備份</button><button class="secondary" id="v29Import">↑ 匯入備份</button><button class="secondary" id="v29Cancel">取消</button></div></div>';
+ document.body.appendChild(panel);const close=()=>panel.remove();
+ panel.onclick=e=>{if(e.target===panel)close()};panel.querySelector('#v29Cancel').onclick=close;
+ panel.querySelector('#v29Export').onclick=()=>{close();exportAll()};
+ panel.querySelector('#v29Import').onclick=()=>{close();$('importFile').click()};
+}
+function exportAll(){
+ const furigana={};
+ for(const song of songs){const id=song.songId;const raw=localStorage.getItem(furiStoreKey(id));if(raw!==null){try{furigana[id]=JSON.parse(raw)}catch(e){}}}
+ const data={schemaVersion:2,exportedAt:new Date().toISOString(),songs,categories:JSON.parse(JSON.stringify(v27Categories)),furigana};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download='japanese-lyrics-complete-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+async function v29ImportFile(input){const file=input.files?.[0];input.value='';if(file)await importAll(file)}
+async function importAll(file){
+ if(!file)return;
+ let d;
+ try{
+  d=JSON.parse(await file.text());
+  if(!d||![1,2].includes(d.schemaVersion)||!Array.isArray(d.songs))throw Error('備份格式不支援');
+  if(d.schemaVersion===2){
+   if(!d.categories||!Array.isArray(d.categories.names)||!d.categories.membership||typeof d.categories.membership!=='object'||!d.furigana||typeof d.furigana!=='object')throw Error('完整備份內容不完整');
+  }
+ }catch(e){alert('無法匯入：'+e.message);return}
+ const legacy=d.schemaVersion===1;
+ const notice=legacy?'這是舊版歌曲備份，僅包含歌曲與對時。現有分類及振假名資料將保留，但可能與匯入歌曲不一致。':'這是完整備份，將一併還原分類與振假名資料。';
+ if(!confirm(`即將匯入 ${d.songs.length} 首歌曲。\n${notice}\n\n這會取代目前的歌曲資料，建議先匯出現有完整備份。確定繼續嗎？`))return;
+ try{
+  const newSongs=JSON.stringify(d.songs);
+  // Check available storage before changing the existing library.
+  const probe='jpBackupV29:probe';localStorage.setItem(probe,newSongs);localStorage.removeItem(probe);
+  if(!legacy){
+   for(const song of songs)localStorage.removeItem(furiStoreKey(song.songId));
+   for(const [id,record] of Object.entries(d.furigana))localStorage.setItem(furiStoreKey(id),JSON.stringify(record));
+   v27Categories={names:d.categories.names,membership:d.categories.membership};v27SaveCategories();
+  }
+  songs=d.songs;save();current=null;v28Selected='all';$('search').value='';renderSongs();
+  alert('匯入完成：'+songs.length+' 首歌曲。'+(legacy?'（舊版備份不包含分類與振假名）':''));
+ }catch(e){alert('匯入未完成，請檢查儲存空間：'+e.message)}
+}
+</script>
+</body></html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V2.6 測試版</title>
+<title>日文同步歌詞 V2.7 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -35,7 +35,7 @@ textarea{min-height:180px}button{padding:9px 13px;border:0;border-radius:9px;bac
 .furi-dialog input[type=text]{width:100%;padding:10px;margin:10px 0;color:#111}
 .furi-dialog label{display:block;margin:10px 0}
 </style><style>
-/* V2.6: two distinct views, sharing the original player and song data */
+/* V2.7: two distinct views, sharing the original player and song data */
 #viewBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
 #viewBar button{flex:1;min-width:95px}
 #simplePlayback{margin:0 0 12px;text-align:center}
@@ -52,7 +52,7 @@ body.view-listen #play{max-width:760px;margin:auto}
 body.view-edit #simplePlayback,body.view-edit #listenModeBar{display:none!important}
 @media(max-width:600px){body.view-listen #player{max-height:none!important}}
 </style><style>
-/* V2.6: playback-only inline controls and no furigana editing in listening mode */
+/* V2.7: playback-only inline controls and no furigana editing in listening mode */
 body.view-listen #simplePlayback{display:none!important}
 body.view-listen #lines .furi-token{pointer-events:none;cursor:inherit;border-bottom:0}
 body.view-listen #lines .listen-line-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin:5px 0 0;line-height:1}
@@ -62,13 +62,26 @@ body.view-edit #lines .listen-line-controls{display:none!important}
 .listen-line-controls button:disabled{opacity:.3}
 body.view-listen #lines .line{padding-bottom:13px}
 </style><style>
-/* V2.6: prevent browser ruby compression from shifting mixed Japanese text */
+/* V2.7: prevent browser ruby compression from shifting mixed Japanese text */
 #lines ruby,#fineLines ruby{ruby-position:over;vertical-align:baseline;white-space:nowrap}
 #lines rt,#fineLines rt{font-size:.52em;text-align:center;line-height:1.15;font-weight:normal}
 #lines .furi-token,#fineLines .furi-token{white-space:nowrap}
+</style><style>
+/* V2.7: compact category controls and a fixed mode switch. */
+.category-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}
+.category-toolbar select{min-width:130px;flex:1;padding:10px;border-radius:9px;max-width:300px}
+.category-picker{padding:9px 0}.category-picker label{display:inline-flex;align-items:center;gap:6px;margin:4px 8px 4px 0;padding:8px 10px;background:#f0f1f3;border-radius:9px}.category-picker input{width:auto;margin:0}
+.song .song-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.song .song-actions button{font-size:13px;padding:7px 9px}
+.song .song-tags{font-size:12px;color:#67748a;margin-top:4px}
+.quick-view-switch{position:fixed;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:100;padding:11px 17px;border-radius:999px;box-shadow:0 4px 18px #0005;background:#222;color:white;min-height:48px;font-weight:700}
+body.view-listen .quick-view-switch,body.view-edit .quick-view-switch{display:block!important}
+#lines{scroll-margin-top:16px}
+body.view-listen #lines{padding-bottom:75px}
+body.view-edit #lines{padding-bottom:75px}
+#lines .furi-token{touch-action:manipulation}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V2.6 測試版</h1>
+<h1>日文同步歌詞播放器 V2.7 測試版</h1>
 
 <div id="home" class="card">
  <div class="row">
@@ -76,7 +89,8 @@ body.view-listen #lines .line{padding-bottom:13px}
   <button class="secondary" onclick="exportAll()">匯出備份</button>
   <label><input id="importFile" type="file" accept="application/json" hidden onchange="importAll(this.files[0])"><button class="secondary" onclick="importFile.click()">匯入備份</button></label>
  </div>
- <input id="search" placeholder="搜尋歌名或歌手" oninput="renderSongs()">
+ <div class="category-toolbar"><select id="categoryFilter" onchange="renderSongs()" aria-label="篩選分類"><option value="all">所有歌曲</option></select><button class="secondary" onclick="addCategory()">＋ 分類</button><button class="secondary" onclick="manageCategories()">管理分類</button></div>
+ <input id="search" placeholder="搜尋歌名、歌手或分類" oninput="renderSongs()">
  <div id="songs"></div>
 </div>
 
@@ -85,13 +99,13 @@ body.view-listen #lines .line{padding-bottom:13px}
  <input id="title" placeholder="歌名"><input id="artist" placeholder="歌手">
  <input id="youtube" placeholder="YouTube 網址或 Video ID">
  <textarea id="lyrics" placeholder="貼上日文歌詞；一行視為一句，空白行會忽略"></textarea>
+ <div id="editorCategories" class="category-picker"></div>
  <div class="row"><button onclick="saveSong()">儲存並開啟</button><button class="secondary" onclick="showHome()">取消</button></div>
 </div>
 
 <div id="play" class="hidden">
 <div id="viewBar"><button class="secondary" onclick="showHome()">← 歌曲庫</button><button id="listenTab" onclick="setPlayerView('listen')">♫ 播放頁面</button><button id="editTab" class="secondary" onclick="setPlayerView('edit')">✎ 編輯頁面</button></div>
  <div class="toolbar row" id="editToolbar">
-  <button class="secondary" onclick="showHome()">← 歌曲庫</button>
   <button onclick="toggleTiming()">半自動對時</button>
   <button class="secondary" onclick="shiftAll(-.1)">整首 −0.1s</button>
   <button class="secondary" onclick="shiftAll(.1)">整首 +0.1s</button>
@@ -137,6 +151,7 @@ body.view-listen #lines .line{padding-bottom:13px}
  </div>
   <div id="lines" class="card"></div>
 </div>
+<button id="quickViewSwitch" class="quick-view-switch hidden" onclick="quickToggleView()" aria-label="切換播放或編輯頁面">✎ 編輯</button>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
@@ -146,8 +161,8 @@ const save=()=>localStorage.setItem('jpSongsV1',JSON.stringify(songs));
 const uid=()=> 'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 function showHome(){timingMode=false;document.body.classList.remove('timing-on');$('home').classList.remove('hidden');$('editor').classList.add('hidden');$('play').classList.add('hidden');renderSongs()}
-function newSong(){current=null;$('title').value='';$('artist').value='';$('youtube').value='';$('lyrics').value='';$('editorTitle').textContent='新增歌曲';$('home').classList.add('hidden');$('play').classList.add('hidden');$('editor').classList.remove('hidden')}
-function editCurrent(){if(!current)return;$('title').value=current.title;$('artist').value=current.artist;$('youtube').value=current.youtubeVideoId;$('lyrics').value=current.lines.map(x=>x.text).join('\n');$('editorTitle').textContent='編輯歌曲';$('play').classList.add('hidden');$('editor').classList.remove('hidden')}
+function newSong(){current=null;$('title').value='';$('artist').value='';$('youtube').value='';$('lyrics').value='';$('editorTitle').textContent='新增歌曲';if(typeof renderEditorCategories==='function')renderEditorCategories(null);$('home').classList.add('hidden');$('play').classList.add('hidden');$('editor').classList.remove('hidden')}
+function editCurrent(){if(!current)return;$('title').value=current.title;$('artist').value=current.artist;$('youtube').value=current.youtubeVideoId;$('lyrics').value=current.lines.map(x=>x.text).join('\n');$('editorTitle').textContent='編輯歌曲';if(typeof renderEditorCategories==='function')renderEditorCategories(current.songId);$('play').classList.add('hidden');$('editor').classList.remove('hidden')}
 function videoId(v){v=v.trim();let m=v.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/);return m?m[1]:v}
 
 function saveSong(){
@@ -156,7 +171,7 @@ function saveSong(){
  let old=current;
  let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},
  lines:lines.map((t,i)=>{let prev=old?.lines?.[i];return {lineId:prev?.text===t?(prev.lineId||uid()):uid(),text:t,startTime:prev?.text===t?prev.startTime:null,tokens:prev?.text===t?prev.tokens:[{tokenId:'T1',text:t,reading:null,override:null}]}})};
- let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)
+ if(typeof saveEditorCategories==='function')saveEditorCategories(obj.songId);let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)
 }
 
 function renderSongs(){
@@ -182,7 +197,7 @@ function loadPlayer(){
 
 function renderLines(){
  $('lines').innerHTML=current.lines.map((l,i)=>`<div class="line" id="line${i}" onclick="seekLine(${i})"><span class="muted time">${l.startTime==null?'--:--':fmt(l.startTime)}</span> ${renderText(l)}
- <div class="editline"><button class="secondary" onclick="event.stopPropagation();editReading(${i})">讀音</button><button class="secondary" onclick="event.stopPropagation();mergeNext(${i})" ${i>=current.lines.length-1?'disabled':''}>與下一句合併</button><button class="secondary" onclick="event.stopPropagation();splitLine(${i})">拆分</button></div>
+ <div class="editline"><button class="secondary" onclick="event.stopPropagation();mergeNext(${i})" ${i>=current.lines.length-1?'disabled':''}>與下一句合併</button><button class="secondary" onclick="event.stopPropagation();splitLine(${i})">拆分</button></div>
  ${l.startTime!=null?fineButtons(i):''}</div>`).join('')
 }
 function fineButtons(i){return `<div class="fine"><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},-.5)">−0.5</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},-.1)">−0.1</button><button class="secondary linePlayBtn" id="linePlay${i}" onclick="event.stopPropagation();toggleLinePlayback(${i})">▶</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},.1)">+0.1</button><button class="secondary" onclick="event.stopPropagation();shiftLine(${i},.5)">+0.5</button></div>`}
@@ -302,10 +317,10 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V2.6 測試版 usability patch */
+/* V2.7 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
-saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
+saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};if(typeof saveEditorCategories==='function')saveEditorCategories(obj.songId);let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
 function closeSplit(){splitIndex=null;let p=$('splitPanel');if(p){p.classList.add('hidden');p.innerHTML=''}}
 function openSplit(i){if(i<0||i>=current.lines.length)return;splitIndex=i;let chars=Array.from(current.lines[i].text);if(chars.length<2){alert('這一句太短，無法拆分');return}let h='<div class="muted">直接點選要拆開的位置：</div><div class="split-text">';chars.forEach((ch,k)=>{h+=`<span>${esc(ch)}</span>`;if(k<chars.length-1)h+=`<button class="split-cut" onclick="confirmSplit(${i},${k+1})">│</button>`});h+='</div><button class="secondary" onclick="closeSplit()">取消</button>';$('splitPanel').innerHTML=h;$('splitPanel').classList.remove('hidden')}
 function confirmSplit(i,pos){let l=current.lines[i],c=Array.from(l.text),a=c.slice(0,pos).join('').trim(),b=c.slice(pos).join('').trim();if(!a||!b)return;l.text=a;l.tokens=[{tokenId:'T1',text:a,reading:null,override:null}];current.lines.splice(i+1,0,{lineId:uid(),text:b,startTime:null,tokens:[{tokenId:'T1',text:b,reading:null,override:null}]});targetIndex=i+1;save();closeSplit();renderLines();status()}
@@ -325,7 +340,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V2.6 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V2.7 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -462,7 +477,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V2.6 測試版: semi-auto timing can be reused, with explicit start-line selection. */
+/* V2.7 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -543,7 +558,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V2.6 測試版: clearly separate stored lyric timestamp from live YouTube time. */
+/* V2.7 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -642,7 +657,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V2.6 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V2.7 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -773,7 +788,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V2.6 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V2.7 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -875,7 +890,7 @@ function furiPut(){if(!current)return;try{localStorage.setItem(furiStoreKey(curr
 function furiLines(){return current?.lines||[]}
 function furiRecord(line){return furiRecords?.lines?.find(x=>x.lineId===line.lineId&&x.text===line.text)||furiRecords?.lines?.find(x=>x.text===line.text)}
 
-/* V2.6: align kana already present in the source as anchors; annotate kanji only. */
+/* V2.7: align kana already present in the source as anchors; annotate kanji only. */
 function furiRubyMixed(surface,reading){
  const parts=surface.match(/[\u3400-\u9fff々〆ヶ]+|[^\u3400-\u9fff々〆ヶ]+/gu)||[];
  const isKanji=p=>furiKanji(p);
@@ -917,11 +932,11 @@ function furiText(line,index){
   const surface=t.surface;
   let display;
   if(furiMode==='hiragana')display=esc(read&&read!=='*'?hira:surface);
-  else if(!furiKanji(surface)||!read||read==='*')display=esc(surface);
+  else if(!furiKanji(surface)||!read||read==='*')display=furiKatakanaRuby(surface);
   else{
    display=furiRubyMixed(surface,hira);
   }
-  return furiKanji(surface)?`<span class="furi-token" onclick="event.stopPropagation();furiEdit('${line.lineId}',${j})">${display}</span>`:display;
+  return furiKanji(surface)?`<span class="furi-token" data-furi-line="${esc(line.lineId)}" data-furi-index="${j}">${display}</span>`:display;
  }).join('');
 }
 const furiOldRenderText=renderText;
@@ -997,7 +1012,7 @@ function furiEdit(lineId,index){
 }
 </script>
 <script>
-/* V2.6 display-only separation: preserves jpSongsV1 and jpFuriganaV2 data. */
+/* V2.7 display-only separation: preserves jpSongsV1 and jpFuriganaV2 data. */
 let playerView='listen',listenSelectedIndex=null;
 function setPlayerView(view){
  playerView=view==='edit'?'edit':'listen';
@@ -1062,7 +1077,7 @@ syncLine=function(){
 };
 </script>
 <script>
-/* V2.6: controls are rendered inside each lyric row in listening view. */
+/* V2.7: controls are rendered inside each lyric row in listening view. */
 const v22RenderLines=renderLines;
 renderLines=function(){
  v22RenderLines();
@@ -1115,7 +1130,7 @@ const v22SetPlayerView=setPlayerView;
 setPlayerView=function(view){v22SetPlayerView(view);v22UpdateButtons()};
 </script>
 <script>
-/* V2.6: when playback naturally advances, current lyric is determined by
+/* V2.7: when playback naturally advances, current lyric is determined by
    video time rather than stale manual-selection index. */
 function v23CurrentLine(){
  if(!current?.lines?.length)return -1;
@@ -1143,7 +1158,7 @@ syncLine=function(){
 </script>
 
 <script>
-/* V2.6: offline Hepburn/Kunrei romaji input. Japanese keyboard is optional.
+/* V2.7: offline Hepburn/Kunrei romaji input. Japanese keyboard is optional.
    Original kana field remains editable and existing saved readings are unchanged. */
 const furiRomanTable=(()=>{
  const m={};
@@ -1156,7 +1171,7 @@ const furiRomanTable=(()=>{
  for(const [prefix,kana] of rows)[...'aiueo'].forEach((v,i)=>m[prefix+v]=kana[i]);
  Object.assign(m,{
  shi:'し',chi:'ち',tsu:'つ',fu:'ふ',ji:'じ',si:'し',ti:'ち',tu:'つ',hu:'ふ',
- zi:'じ',di:'ぢ',du:'づ',wi:'うぃ',we:'うぇ',wo:'を',nn:'ん',
+ zi:'じ',di:'ぢ',du:'づ',wa:'わ',wi:'うぃ',we:'うぇ',wo:'を',nn:'ん',
  kya:'きゃ',kyu:'きゅ',kyo:'きょ',sha:'しゃ',shu:'しゅ',sho:'しょ',
  sya:'しゃ',syu:'しゅ',syo:'しょ',cha:'ちゃ',chu:'ちゅ',cho:'ちょ',
  cya:'ちゃ',cyu:'ちゅ',cyo:'ちょ',tya:'ちゃ',tyu:'ちゅ',tyo:'ちょ',
@@ -1198,10 +1213,118 @@ function furiRomajiConvert(input){
 }
 </script>
 <script>
-/* V2.6: lightweight display offset, independent from saved song timestamps. */
+/* V2.7: lightweight display offset, independent from saved song timestamps. */
 let v26Lead=(()=>{const n=Number(localStorage.getItem('jpLyricDisplayLeadV26'));return Number.isFinite(n)&&n>=0&&n<=0.5?n:0.12})();
 function v26SetLead(value){v26Lead=Math.max(0,Math.min(0.5,Number(value)||0));localStorage.setItem('jpLyricDisplayLeadV26',String(v26Lead));document.getElementById('lyricLeadValue').textContent=v26Lead.toFixed(2);v19Tick();syncLine()}
 document.getElementById('lyricLead').value=String(v26Lead);
 document.getElementById('lyricLeadValue').textContent=v26Lead.toFixed(2);
 </script>
-</body></html>
+<script>
+/* V2.7: category metadata is separate from jpSongsV1 and jpFuriganaV2. */
+const v27CategoryKey='jpSongCategoriesV27';
+let v27Categories=(()=>{try{const d=JSON.parse(localStorage.getItem(v27CategoryKey)||'{}');return {names:Array.isArray(d.names)?d.names:[],membership:d.membership&&typeof d.membership==='object'?d.membership:{}}}catch{return {names:[],membership:{}}}})();
+function v27SaveCategories(){localStorage.setItem(v27CategoryKey,JSON.stringify(v27Categories))}
+function v27CategoryNames(id){return (v27Categories.membership[id]||[]).filter(n=>v27Categories.names.includes(n))}
+function v27RefreshCategoryFilter(){
+ const el=$('categoryFilter'),old=el.value;
+ el.innerHTML='<option value="all">所有歌曲</option><option value="uncategorized">未分類</option>'+v27Categories.names.map((n,i)=>`<option value="c${i}">${esc(n)}</option>`).join('');
+ if([...el.options].some(o=>o.value===old))el.value=old;
+}
+function addCategory(){
+ const name=prompt('新增分類名稱（例如：歌手、團體或練習中）')?.trim();
+ if(!name)return;
+ if(v27Categories.names.includes(name)){alert('這個分類已存在');return}
+ v27Categories.names.push(name);v27SaveCategories();v27RefreshCategoryFilter();renderSongs();
+ if(!$('editor').classList.contains('hidden'))renderEditorCategories(current?.songId||null);
+}
+function manageCategories(){
+ if(!v27Categories.names.length){alert('尚未建立分類');return}
+ const choice=prompt('分類管理：輸入分類名稱以重新命名或刪除\n\n'+v27Categories.names.join('、'))?.trim();
+ if(!choice)return;
+ if(!v27Categories.names.includes(choice)){alert('找不到分類');return}
+ const action=prompt('輸入新的分類名稱來重新命名；輸入「刪除」只刪分類、不刪歌曲',choice)?.trim();
+ if(!action||action===choice)return;
+ if(action==='刪除'){
+  if(!confirm('刪除分類「'+choice+'」？歌曲與對時資料都會保留。'))return;
+  v27Categories.names=v27Categories.names.filter(n=>n!==choice);
+  for(const id in v27Categories.membership)v27Categories.membership[id]=v27CategoryNames(id).filter(n=>n!==choice);
+ }else{
+  if(v27Categories.names.includes(action)){alert('分類名稱已存在');return}
+  v27Categories.names[v27Categories.names.indexOf(choice)]=action;
+  for(const id in v27Categories.membership)v27Categories.membership[id]=(v27Categories.membership[id]||[]).map(n=>n===choice?action:n);
+ }
+ v27SaveCategories();v27RefreshCategoryFilter();renderSongs();
+ if(!$('editor').classList.contains('hidden'))renderEditorCategories(current?.songId||null);
+}
+function renderEditorCategories(id){
+ const selected=id?v27CategoryNames(id):[];
+ $('editorCategories').innerHTML='<b>歌曲分類（可複選）</b><div class="muted">不勾選則屬於「未分類」</div>'+(v27Categories.names.length?v27Categories.names.map((n,i)=>`<label><input type="checkbox" data-category-index="${i}" ${selected.includes(n)?'checked':''}>${esc(n)}</label>`).join(''):'<p class="muted">尚未建立分類，可先到歌曲庫新增。</p>');
+}
+function saveEditorCategories(id){
+ v27Categories.membership[id]=[...$('editorCategories').querySelectorAll('input[data-category-index]:checked')].map(el=>v27Categories.names[Number(el.dataset.categoryIndex)]).filter(Boolean);
+ v27SaveCategories();
+}
+function editSongCategories(id){
+ const song=songs.find(x=>x.songId===id);if(!song)return;
+ if(!v27Categories.names.length){if(confirm('目前沒有分類，要新增分類嗎？'))addCategory();else return}
+ const selected=new Set(v27CategoryNames(id));
+ const panel=document.createElement('div');panel.className='furi-overlay';panel.innerHTML=`<div class="furi-dialog" role="dialog" aria-modal="true"><h3>歌曲分類：${esc(song.title)}</h3><div class="category-picker">${v27Categories.names.map((n,i)=>`<label><input type="checkbox" data-category-index="${i}" ${selected.has(n)?'checked':''}>${esc(n)}</label>`).join('')}</div><div class="row"><button id="v27CatSave">儲存分類</button><button class="secondary" id="v27CatCancel">取消</button></div></div>`;
+ document.body.appendChild(panel);panel.onclick=e=>{if(e.target===panel)panel.remove()};
+ panel.querySelector('#v27CatCancel').onclick=()=>panel.remove();
+ panel.querySelector('#v27CatSave').onclick=()=>{
+  v27Categories.membership[id]=[...panel.querySelectorAll('input[data-category-index]:checked')].map(el=>v27Categories.names[Number(el.dataset.categoryIndex)]);
+  v27SaveCategories();panel.remove();renderSongs();
+ };
+}
+renderSongs=function(){
+ v27RefreshCategoryFilter();const filter=$('categoryFilter').value,q=$('search').value.trim().toLowerCase();
+ const matching=songs.filter(song=>{
+  const tags=v27CategoryNames(song.songId);
+  if(filter==='uncategorized'&&tags.length)return false;
+  if(filter.startsWith('c')&&!tags.includes(v27Categories.names[Number(filter.slice(1))]))return false;
+  return (song.title+' '+song.artist+' '+tags.join(' ')).toLowerCase().includes(q);
+ });
+ $('songs').innerHTML=matching.map(song=>`<div class="song"><div><b>${esc(song.title)}</b><div class="muted">${esc(song.artist||'未填歌手')} · ${song.lines.filter(x=>x.startTime!=null).length}/${song.lines.length} 句已對時</div><div class="song-tags">${esc(v27CategoryNames(song.songId).join('、')||'未分類')}</div></div><div class="song-actions"><button onclick="openSong('${song.songId}')">開啟</button><button class="secondary" onclick="editSongCategories('${song.songId}')">分類</button><button class="danger" onclick="delSong('${song.songId}')">刪除</button></div></div>`).join('')||'<p class="muted">沒有符合條件的歌曲。</p>';
+};
+/* Ensure clicking a kanji in edit mode cannot bubble into line playback. */
+$('lines').addEventListener('click',event=>{
+ const token=event.target.closest('.furi-token[data-furi-line]');
+ if(!token||playerView!=='edit')return;
+ event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+ furiEdit(token.dataset.furiLine,Number(token.dataset.furiIndex));
+},true);
+/* Default katakana furigana; original hiragana remains unannotated. */
+/* Fix HTML escaping for katakana and surrounding punctuation. */
+function furiKatakanaRuby(surface){
+ let html='',last=0;const re=/[ァ-ヺー]+/gu;let match;
+ while((match=re.exec(surface))){html+=esc(surface.slice(last,match.index));const part=match[0];html+='<ruby>'+esc(part)+'<rt>'+esc(furiHira(part))+'</rt></ruby>';last=match.index+part.length}
+ return html+esc(surface.slice(last));
+}
+/* Fixed bottom-right switch; scroll the same lyric into view after mode change. */
+function v27VisibleLine(){
+ const rows=[...document.querySelectorAll('#lines .line')];
+ const box=$('lines').getBoundingClientRect();const middle=Math.max(0,box.top)+Math.min(box.height,innerHeight)/2;
+ let best=-1,distance=Infinity;
+ for(let i=0;i<rows.length;i++){
+  const r=rows[i].getBoundingClientRect(),d=Math.abs((r.top+r.bottom)/2-middle);
+  if(d<distance){distance=d;best=i}
+ }
+ return best;
+}
+function quickToggleView(){
+ const line=v27VisibleLine(),next=playerView==='listen'?'edit':'listen';
+ setPlayerView(next);
+ if(line>=0)requestAnimationFrame(()=>{
+  const el=$('line'+line);if(el)el.scrollIntoView({block:'center',behavior:'instant'});
+ });
+}
+const v27SetView=setPlayerView;
+setPlayerView=function(view){v27SetView(view);$('quickViewSwitch').textContent=playerView==='listen'?'✎ 編輯':'♫ 播放'};
+const v27ShowHome=showHome;
+showHome=function(){$('quickViewSwitch').classList.add('hidden');v27ShowHome()};
+const v27OpenSong=openSong;
+openSong=function(id){v27OpenSong(id);$('quickViewSwitch').classList.remove('hidden')};
+/* Protect modal interactions from underlying playback. */
+// Modal sits above the player; clicks inside it do not reach lyric rows.
+v27RefreshCategoryFilter();renderSongs();
+</script></body></html>

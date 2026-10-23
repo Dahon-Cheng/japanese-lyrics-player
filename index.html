@@ -945,7 +945,14 @@ function furiKanji(s){return /[\u3400-\u9fff々〆ヶ]/u.test(s)}
 function furiGet(id){try{return JSON.parse(localStorage.getItem(furiStoreKey(id))||'null')}catch{return null}}
 function furiPut(){if(!current)return;try{localStorage.setItem(furiStoreKey(current.songId),JSON.stringify(furiRecords))}catch(e){$('furiStatus').textContent='無法儲存振假名：'+e.message}}
 function furiLines(){return current?.lines||[]}
-function furiRecord(line){return furiRecords?.lines?.find(x=>x.lineId===line.lineId&&x.text===line.text)||furiRecords?.lines?.find(x=>x.text===line.text)}
+function furiRecord(line){
+ const records=furiRecords?.lines||[];
+ const exact=records.find(x=>x.lineId===line.lineId&&x.text===line.text)||records.find(x=>x.text===line.text);
+ if(exact)return exact;
+ // V3.4.7: adding display spaces must not invalidate already analyzed readings.
+ const compact=s=>String(s||'').replace(/[\s\u3000]/gu,'');
+ return records.find(x=>x.lineId===line.lineId&&compact(x.text)===compact(line.text))||null;
+}
 
 /* V3.3: align kana already present in the source as anchors; annotate kanji only. */
 function furiRubyMixed(surface,reading){
@@ -983,18 +990,38 @@ function furiText(line,index){
  if(furiMode==='original')return esc(line.text);
  const record=furiRecord(line);
  if(!record)return esc(line.text);
- return record.tokens.map((t,j)=>{
+ // Readings are attached to tokenizer tokens. Reconcile spaces added after analysis
+ // without losing the token boundaries or the reading of the first word.
+ const originalTokens=record.tokens||[];
+ const reconstructed=originalTokens.map(t=>t.surface).join('');
+ const compact=s=>String(s||'').replace(/[\s\u3000]/gu,'');
+ if(compact(reconstructed)!==compact(line.text))return esc(line.text);
+ const pieces=[];let cursor=0;
+ for(const t of originalTokens){
+  const tokenChars=Array.from(t.surface),sourceChars=Array.from(line.text),out=[];
+  for(const ch of tokenChars){
+   while(cursor<sourceChars.length&&/[\s\u3000]/u.test(sourceChars[cursor]))out.push(sourceChars[cursor++]);
+   if(cursor<sourceChars.length)out.push(sourceChars[cursor++]);
+  }
+  pieces.push({...t,displaySurface:out.join('')});
+ }
+ const trailing=Array.from(line.text).slice(cursor).join('');
+ return pieces.map((t,j)=>{
   const read=t.once??furiRecords.all?.[t.surface]??t.reading;
   const hira=furiHira(read);
   const surface=t.surface;
+  const displaySurface=t.displaySurface||surface;
   let display;
-  if(furiMode==='hiragana')display=esc(read&&read!=='*'?hira:surface);
-  else if(!furiKanji(surface)||!read||read==='*')display=furiKatakanaRuby(surface);
+  if(furiMode==='hiragana')display=esc(read&&read!=='*'?hira:displaySurface);
+  else if(!furiKanji(surface)||!read||read==='*')display=furiKatakanaRuby(displaySurface);
   else{
    display=furiRubyMixed(surface,hira);
+   // Ensure mixed kanji/kana words always show a reading when recognized.
+   if(!display.includes('<rt>'))display='<ruby>'+esc(surface)+'<rt>'+esc(hira)+'</rt></ruby>';
+   if(displaySurface!==surface)display=esc(displaySurface.slice(0,displaySurface.indexOf(surface)))+display;
   }
   return furiKanji(surface)?`<span class="furi-token" data-furi-line="${esc(line.lineId)}" data-furi-index="${j}">${display}</span>`:display;
- }).join('');
+ }).join('')+esc(trailing);
 }
 const furiOldRenderText=renderText;
 renderText=function(line){return furiMode==='original'?furiOldRenderText(line):furiText(line)};
@@ -2129,3 +2156,5 @@ window.saveSong=function(){
  };
 })();
 </script>
+
+<!-- V3.4.7: restore ruby after whitespace-only edits and ensure recognized mixed tokens display. -->

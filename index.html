@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V3.4.2 測試版</title>
+<title>日文同步歌詞 V3.4.3 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -132,7 +132,7 @@ body.view-edit #lines{padding-bottom:75px}
 @media(max-width:600px){#viewBar .v33-settings-button{min-width:42px;padding:9px}}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V3.4.2 測試版</h1>
+<h1>日文同步歌詞播放器 V3.4.3 測試版</h1>
 
 <div id="home" class="card home-library">
  <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/><path d="M17 16h6M20 13v6"/></svg></button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3"/><path d="M17 17v6m-3-3 3 3 3-3"/></svg></button></div></div>
@@ -153,7 +153,7 @@ body.view-edit #lines{padding-bottom:75px}
  <div class="v32-import-bar"><button type="button" class="secondary" onclick="v32PickPDF()">📄 匯入歌詞 PDF</button><button type="button" class="secondary" onclick="v34PickImage()">▧ 圖片 OCR 匯入</button><span class="muted">亦可直接貼上歌詞</span><input id="v32PdfFile" type="file" accept="application/pdf,.pdf" hidden onchange="v32ImportPDF(this)"><input id="v34ImageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden onchange="v34ImportImage(this)"></div>
  <textarea id="lyrics" placeholder="貼上日文歌詞；一行視為一句，空白行會忽略"></textarea>
  <div id="editorCategories" class="category-picker"></div>
- <div class="row"><button onclick="saveSong()">儲存並開啟</button><button class="secondary" onclick="showHome()">取消</button></div>
+ <div class="row"><button onclick="saveSong()">儲存並開啟</button><button class="secondary" id="v343RestoreBtn" onclick="v343RestorePreviousEdit()" style="display:none">復原上次歌詞修改</button><button class="secondary" onclick="showHome()">取消</button></div>
 </div>
 
 <div id="play" class="hidden">
@@ -370,7 +370,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V3.4.2 測試版 usability patch */
+/* V3.4.3 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};if(typeof saveEditorCategories==='function')saveEditorCategories(obj.songId);let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -393,7 +393,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V3.4.2 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V3.4.3 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -530,7 +530,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V3.4.2 測試版: semi-auto timing can be reused, with explicit start-line selection. */
+/* V3.4.3 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -611,7 +611,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V3.4.2 測試版: clearly separate stored lyric timestamp from live YouTube time. */
+/* V3.4.3 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -710,7 +710,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V3.4.2 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V3.4.3 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -841,7 +841,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V3.4.2 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V3.4.3 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -1869,3 +1869,108 @@ function v34ApplyOCR(){
 renderSongs();
 </script>
 </body></html>
+<script>
+/* V3.4.3: timestamp-safe lyric edits. No changes to the song storage schema. */
+(function(){
+const backupKey=id=>'jpLyricsEditUndoV343:'+id;
+const originalEdit=editCurrent;
+editCurrent=function(){originalEdit();v343RefreshRestoreButton()};
+const originalNew=newSong;
+newSong=function(){originalNew();v343RefreshRestoreButton()};
+window.v343RefreshRestoreButton=function(){
+ const b=document.getElementById('v343RestoreBtn');if(!b)return;
+ b.style.display=current&&localStorage.getItem(backupKey(current.songId))?'':'none';
+};
+window.v343RestorePreviousEdit=function(){
+ if(!current)return;let raw=localStorage.getItem(backupKey(current.songId));if(!raw)return;
+ let old;try{old=JSON.parse(raw)}catch(e){alert('復原資料無法讀取');return}
+ if(!old||!Array.isArray(old.lines)||old.songId!==current.songId)return;
+ if(!confirm('要還原上次修改前的歌詞及時間戳記嗎？目前這首歌的變更將被取代。'))return;
+ let i=songs.findIndex(x=>x.songId===old.songId);if(i<0)return;
+ songs[i]=old;save();localStorage.removeItem(backupKey(old.songId));current=old;
+ editCurrent();alert('已還原上次修改前的歌詞及時間戳記。');
+};
+function norm(t){return String(t).normalize('NFKC').replace(/[\s\u3000、。，．,.!?！？「」『』（）()・ー_＿]/g,'').toLowerCase()}
+function similarity(a,b){a=norm(a);b=norm(b);if(a===b)return 1;if(!a.length||!b.length)return 0;
+ let prev=Array.from({length:b.length+1},(_,i)=>i);
+ for(let i=1;i<=a.length;i++){let row=[i];for(let j=1;j<=b.length;j++)row[j]=Math.min(row[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));prev=row}
+ return 1-prev[b.length]/Math.max(a.length,b.length)
+}
+function uniqueAnchors(oldLines,texts){
+ // LCS anchors, but repeated identical chorus lines are matched only when unique.
+ let countsOld=new Map(),countsNew=new Map();
+ oldLines.forEach(x=>countsOld.set(x.text,(countsOld.get(x.text)||0)+1));
+ texts.forEach(x=>countsNew.set(x,(countsNew.get(x)||0)+1));
+ let a=oldLines.map(x=>x.text),n=a.length,m=texts.length;
+ let dp=Array.from({length:n+1},()=>new Uint16Array(m+1));
+ for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===texts[j]&&countsOld.get(a[i])===1&&countsNew.get(texts[j])===1?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+ let anchors=[[-1,-1]],i=0,j=0;
+ while(i<n&&j<m){if(a[i]===texts[j]&&countsOld.get(a[i])===1&&countsNew.get(texts[j])===1){anchors.push([i,j]);i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}
+ anchors.push([n,m]);return anchors
+}
+function assignMatches(oldLines,texts){
+ const anchors=uniqueAnchors(oldLines,texts),matches=new Map(),uncertain=[];
+ for(let k=1;k<anchors.length-1;k++)matches.set(anchors[k][1],anchors[k][0]);
+ for(let a=0;a<anchors.length-1;a++){
+  let [ol,nl]=anchors[a],[or,nr]=anchors[a+1];
+  let oi=Array.from({length:or-ol-1},(_,k)=>ol+1+k),nj=Array.from({length:nr-nl-1},(_,k)=>nl+1+k);
+  if(!oi.length||!nj.length)continue;
+  // If the same number of lines remain between secure anchors, edits are positional,
+  // provided no likely moved/inserted lines contradict that alignment.
+  if(oi.length===nj.length){
+   let scores=oi.map((x,k)=>similarity(oldLines[x].text,texts[nj[k]]));
+   if(scores.every(v=>v>=.70)){
+    oi.forEach((x,k)=>matches.set(nj[k],x));continue;
+   }
+  }
+  // Unequal counts: match only strong, unique fuzzy candidates; leave others unassigned.
+  let candidates=[];
+  for(let x of oi)for(let y of nj){let sc=similarity(oldLines[x].text,texts[y]);if(sc>=.82)candidates.push({x,y,sc})}
+  candidates.sort((a,b)=>b.sc-a.sc);
+  let usedO=new Set(),usedN=new Set();
+  for(let c of candidates){if(usedO.has(c.x)||usedN.has(c.y))continue;
+   let alt=candidates.some(v=>v!==c&&(v.x===c.x||v.y===c.y)&&v.sc>c.sc-.09);
+   if(alt)continue;
+   matches.set(c.y,c.x);usedO.add(c.x);usedN.add(c.y)
+  }
+  // For small ambiguous blocks, ask about each remaining line with a plausible match.
+  for(let y of nj){if(matches.has(y))continue;
+   let possible=oi.filter(x=>!usedO.has(x)).map(x=>({x,sc:similarity(oldLines[x].text,texts[y])})).sort((a,b)=>b.sc-a.sc);
+   if(possible.length&&possible[0].sc>=.38)uncertain.push({y,possible:possible.slice(0,3)})
+  }
+ }
+ return {matches,uncertain}
+}
+window.saveSong=function(){
+ let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}
+ let old=current, matches=new Map();
+ if(old){
+  let result=assignMatches(old.lines,texts);matches=result.matches;
+  const used=new Set(matches.values());
+  for(const item of result.uncertain){
+   let candidate=item.possible.find(c=>!used.has(c.x));if(!candidate)continue;
+   let previous=old.lines[candidate.x];
+   if(confirm('以下歌詞可能是同一句的修改：\n\n原句：'+previous.text+'\n原時間：'+(previous.startTime==null?'未對時':fmt(previous.startTime))+'\n\n新句：'+texts[item.y]+'\n\n按「確定」沿用原時間；按「取消」將這句視為新句（不繼承時間）。')){
+    matches.set(item.y,candidate.x);used.add(candidate.x)
+   }
+  }
+  let missing=texts.length-matches.size;
+  let lost=old.lines.filter((l,i)=>l.startTime!=null&&![...matches.values()].includes(i)).length;
+  if(lost>0&&!confirm('這次修改有 '+lost+' 句已對時歌詞無法確定對應（可能是刪除或重寫）。\n未匹配的新句將不繼承時間戳記。\n\n要繼續儲存嗎？修改前資料可使用「復原上次歌詞修改」還原。'))return;
+ }
+ let newLines=texts.map((t,i)=>{
+  const oi=matches.get(i),prev=oi===undefined?null:old.lines[oi];
+  if(!prev)return {lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]};
+  if(prev.text===t)return {...prev};
+  // Keep line identity and time, invalidate only stale tokenizer output.
+  return {...prev,text:t,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]};
+ });
+ let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};
+ if(old){try{localStorage.setItem(backupKey(old.songId),JSON.stringify(old))}catch(e){if(!confirm('無法儲存歌詞修改前的復原快照（可能是瀏覽器儲存空間不足）。要繼續儲存嗎？'))return}}
+ if(typeof saveEditorCategories==='function')saveEditorCategories(obj.songId);
+ let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);
+ save();openSong(obj.songId)
+};
+})();
+</script>

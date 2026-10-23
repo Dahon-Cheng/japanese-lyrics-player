@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V3.4.1 測試版</title>
+<title>日文同步歌詞 V3.4.2 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -132,7 +132,7 @@ body.view-edit #lines{padding-bottom:75px}
 @media(max-width:600px){#viewBar .v33-settings-button{min-width:42px;padding:9px}}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V3.4.1 測試版</h1>
+<h1>日文同步歌詞播放器 V3.4.2 測試版</h1>
 
 <div id="home" class="card home-library">
  <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/><path d="M17 16h6M20 13v6"/></svg></button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3"/><path d="M17 17v6m-3-3 3 3 3-3"/></svg></button></div></div>
@@ -370,7 +370,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V3.4.1 測試版 usability patch */
+/* V3.4.2 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};if(typeof saveEditorCategories==='function')saveEditorCategories(obj.songId);let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -393,7 +393,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V3.4.1 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V3.4.2 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -530,7 +530,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V3.4.1 測試版: semi-auto timing can be reused, with explicit start-line selection. */
+/* V3.4.2 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -611,7 +611,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V3.4.1 測試版: clearly separate stored lyric timestamp from live YouTube time. */
+/* V3.4.2 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -710,7 +710,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V3.4.1 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V3.4.2 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -841,7 +841,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V3.4.1 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V3.4.2 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -1758,8 +1758,8 @@ v33ApplySettings();
 <div id="v34OcrOverlay" class="furi-overlay hidden" role="dialog" aria-modal="true" aria-label="圖片歌詞辨識">
  <div class="v34-ocr-panel"><h3>圖片 OCR 歌詞匯入</h3>
  <div id="v34OcrStatus" class="muted">準備辨識</div><progress id="v34OcrProgress" max="100" value="0"></progress>
- <p class="muted">支援單張長截圖。辨識後自動清除日文多餘空格（保留英文單字間空格）；網站文字、錯字或畫面折行仍請校對；此功能需要網路下載辨識程式與日文模型，圖片在瀏覽器內處理。</p>
- <div class="v341-ocr-tools"><label><input type="checkbox" id="v341AutoClean" checked onchange="v341ToggleOCRClean()"> 自動清除日文多餘空格</label><button type="button" class="secondary" onclick="v341ShowOriginal()">查看辨識原文</button><button type="button" class="secondary" onclick="v341Reclean()">重新整理</button></div>
+ <p class="muted">支援單張長截圖。辨識後自動清除日文多餘空格與誤判底線（保留英文單字間空格）；網站文字、錯字或畫面折行仍請校對；此功能需要網路下載辨識程式與日文模型，圖片在瀏覽器內處理。</p>
+ <div class="v341-ocr-tools"><label><input type="checkbox" id="v341AutoClean" checked onchange="v341ToggleOCRClean()"> 自動清除日文多餘空格與誤判底線</label><button type="button" class="secondary" onclick="v341ShowOriginal()">查看辨識原文</button><button type="button" class="secondary" onclick="v341Reclean()">重新整理</button></div>
  <p class="muted" id="v341CleanHint">預設顯示整理後文字；英文單字間的空格會保留。原始辨識文字可隨時查看。</p>
  <textarea id="v34OcrPreview" placeholder="辨識結果會顯示於此，可直接編輯"></textarea>
  <div class="v34-ocr-actions"><button id="v34OcrApply" onclick="v34ApplyOCR()" disabled>套用至歌曲編輯欄位</button><button class="secondary" onclick="v34CloseOCR()">取消</button></div>
@@ -1782,12 +1782,15 @@ function v34Paginate(matching){
  return matching.slice((v34Page-1)*v34PageSize,v34Page*v34PageSize);
 }
 /* V3.4 OCR: browser-side image processing, long screenshots sliced at native resolution. */
-/* V3.4.1: reversible OCR cleanup; only remove whitespace when adjacent text is Japanese. */
+/* V3.4.2: reversible OCR cleanup; only remove whitespace when adjacent text is Japanese. */
 let v341OcrOriginal='';
 function v341IsJapanese(c){return /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\u3005\u303b\uff66-\uff9f]/u.test(c)}
 function v341CleanLine(line){
  // Tesseract frequently inserts spaces inside Japanese words. Preserve Latin-to-Latin spaces.
  let t=line.replace(/\u00a0/g,' ').replace(/\u3000/g,' ');
+ // OCR sometimes renders a wide gap between Japanese text as an underscore.
+ // Remove only underscore runs bounded by Japanese characters, leaving English identifiers intact.
+ t=t.replace(/([\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\u3005\u303b\uff66-\uff9f])\s*[_＿﹍﹎]+\s*(?=[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\u3005\u303b\uff66-\uff9f])/gu,'$1');
  t=t.replace(/([\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\u3005\u303b\uff66-\uff9f]) +(?=[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\u3005\u303b\uff66-\uff9f])/gu,'$1');
  // Also remove spaces inserted between Japanese characters and punctuation.
  t=t.replace(/([\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\u3005\u303b]) +(?=[、。，．！？!?,.])/gu,'$1');
@@ -1816,7 +1819,7 @@ function v341Reclean(){
  if(document.getElementById('v34OcrPreview').value!==v341OcrOriginal&&document.getElementById('v34OcrPreview').value!==v341CleanOCR(v341OcrOriginal)&&!confirm('重新整理會取代目前手動修改的內容，確定繼續？'))return;
  document.getElementById('v341AutoClean').checked=true;
  document.getElementById('v34OcrPreview').value=v341CleanOCR(v341OcrOriginal);
- document.getElementById('v341CleanHint').textContent='已重新整理日文空格，英文單字間空格保留。';
+ document.getElementById('v341CleanHint').textContent='已重新整理日文空格及誤判底線，英文單字間空格保留。';
 }
 let v34OcrBusy=false;
 function v34PickImage(){document.getElementById('v34ImageFile').click()}
@@ -1854,7 +1857,7 @@ async function v34ImportImage(input){
   }
   v341OcrOriginal=parts.filter(Boolean).join('\n');preview.value=v341CleanOCR(v341OcrOriginal);
   if(!preview.value.trim())throw Error('未辨識出文字，請換一張清晰截圖');
-  status.textContent='辨識完成，已自動移除日文多餘空格。請檢查非歌詞文字、辨識錯字及手機畫面折行。';apply.disabled=false;
+  status.textContent='辨識完成，已自動移除日文多餘空格及誤判底線。請檢查非歌詞文字、辨識錯字及手機畫面折行。';apply.disabled=false;
  }catch(e){status.textContent='辨識失敗：'+(e?.message||e)+'。原本歌曲資料未變更。'}
  finally{v34OcrBusy=false;if(worker)try{await worker.terminate()}catch(e){}if(bitmap)bitmap.close()}
 }

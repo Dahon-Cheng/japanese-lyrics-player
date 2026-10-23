@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V3.4.8 測試版</title>
+<title>日文同步歌詞 V3.4.9 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -136,7 +136,7 @@ body.view-edit #lines{padding-bottom:75px}
 @media(max-width:600px){#viewBar .v33-settings-button{min-width:42px;padding:9px}}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V3.4.8 測試版</h1>
+<h1>日文同步歌詞播放器 V3.4.9 測試版</h1>
 
 <div id="home" class="card home-library">
  <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/><path d="M17 16h6M20 13v6"/></svg></button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3"/><path d="M17 17v6m-3-3 3 3 3-3"/></svg></button></div></div>
@@ -992,43 +992,54 @@ function furiRubyMixed(surface,reading){
  return html;
 }
 
+/* V3.4.9: render ruby over the exact source text, never reconstruct the lyric
+   from tokenizer surfaces. Spaces in the original text are preserved verbatim. */
 function furiText(line,index){
  if(furiMode==='original')return esc(line.text);
  const record=furiRecord(line);
  if(!record)return esc(line.text);
- // Readings are attached to tokenizer tokens. Reconcile spaces added after analysis
- // without losing the token boundaries or the reading of the first word.
- const originalTokens=record.tokens||[];
- const reconstructed=originalTokens.map(t=>t.surface).join('');
+ const tokens=record.tokens||[];
  const compact=s=>String(s||'').replace(/[\s\u3000]/gu,'');
- if(compact(reconstructed)!==compact(line.text))return esc(line.text);
- const pieces=[];let cursor=0;
- for(const t of originalTokens){
-  const tokenChars=Array.from(t.surface),sourceChars=Array.from(line.text),out=[];
-  for(const ch of tokenChars){
-   while(cursor<sourceChars.length&&/[\s\u3000]/u.test(sourceChars[cursor]))out.push(sourceChars[cursor++]);
-   if(cursor<sourceChars.length)out.push(sourceChars[cursor++]);
+ if(compact(tokens.map(t=>t.surface).join(''))!==compact(line.text))return esc(line.text);
+ const chars=Array.from(line.text), whitespace=c=>/[\s\u3000]/u.test(c);
+ let cursor=0;
+ const pieces=[];
+ for(let j=0;j<tokens.length;j++){
+  const t=tokens[j], written=Array.from(t.surface||'');
+  let prefix='';
+  while(cursor<chars.length&&whitespace(chars[cursor]))prefix+=chars[cursor++];
+  let actual='';
+  for(const ch of written){
+   if(whitespace(ch)){
+    // Tokenizer may have included source whitespace itself.
+    if(cursor<chars.length&&whitespace(chars[cursor]))actual+=chars[cursor++];
+    continue;
+   }
+   while(cursor<chars.length&&whitespace(chars[cursor]))actual+=chars[cursor++];
+   if(cursor>=chars.length||chars[cursor]!==ch)return esc(line.text);
+   actual+=chars[cursor++];
   }
-  pieces.push({...t,displaySurface:out.join('')});
- }
- const trailing=Array.from(line.text).slice(cursor).join('');
- return pieces.map((t,j)=>{
+  // All source characters must appear exactly once. Whitespace inside a token
+  // cannot be put in a ruby base; show the token as-is in that rare case.
   const read=t.once??furiRecords.all?.[t.surface]??t.reading;
-  const hira=furiHira(read);
-  const surface=t.surface;
-  const displaySurface=t.displaySurface||surface;
+  const hira=furiHira(read), surface=t.surface;
   let display;
-  if(furiMode==='hiragana')display=esc(read&&read!=='*'?hira:displaySurface);
-  else if(!furiKanji(surface)||!read||read==='*')display=furiKatakanaRuby(displaySurface);
-  else{
+  if(furiMode==='hiragana')display=esc(read&&read!=='*'?hira:actual);
+  else if(!furiKanji(surface)||!read||read==='*')display=furiKatakanaRuby(actual);
+  else if(actual!==surface){
+   // For original whitespace inside a token, do not duplicate or discard text.
+   display=esc(actual);
+  }else{
    display=furiRubyMixed(surface,hira);
-   // Ensure mixed kanji/kana words always show a reading when recognized.
    if(!display.includes('<rt>'))display='<ruby>'+esc(surface)+'<rt>'+esc(hira)+'</rt></ruby>';
-   if(displaySurface!==surface)display=esc(displaySurface.slice(0,displaySurface.indexOf(surface)))+display;
   }
-  return furiKanji(surface)?`<span class="furi-token" data-furi-line="${esc(line.lineId)}" data-furi-index="${j}">${display}</span>`:display;
- }).join('')+esc(trailing);
+  const decorated=furiKanji(surface)?`<span class="furi-token" data-furi-line="${esc(line.lineId)}" data-furi-index="${j}">${display}</span>`:display;
+  pieces.push(esc(prefix)+decorated);
+ }
+ pieces.push(esc(chars.slice(cursor).join('')));
+ return pieces.join('');
 }
+
 const furiOldRenderText=renderText;
 renderText=function(line){return furiMode==='original'?furiOldRenderText(line):furiText(line)};
 const furiOldOpenSong=openSong;

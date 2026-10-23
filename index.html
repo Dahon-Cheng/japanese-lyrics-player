@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V3.3 測試版</title>
+<title>日文同步歌詞 V3.4 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -132,15 +132,17 @@ body.view-edit #lines{padding-bottom:75px}
 @media(max-width:600px){#viewBar .v33-settings-button{min-width:42px;padding:9px}}
 </style></head>
 <body>
-<h1>日文同步歌詞播放器 V3.3 測試版</h1>
+<h1>日文同步歌詞播放器 V3.4 測試版</h1>
 
 <div id="home" class="card home-library">
  <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/><path d="M17 16h6M20 13v6"/></svg></button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3"/><path d="M17 17v6m-3-3 3 3 3-3"/></svg></button></div></div>
- <input id="search" type="search" placeholder="⌕ 搜尋歌曲、歌手、分類" oninput="renderSongs()" aria-label="搜尋歌曲、歌手、分類">
+ <input id="search" type="search" placeholder="⌕ 搜尋歌曲、歌手、分類" oninput="v34ResetPage();renderSongs()" aria-label="搜尋歌曲、歌手、分類">
  <select id="categoryFilter" class="hidden" aria-label="目前分類"><option value="all">所有歌曲</option></select>
  <div id="libraryCategories" class="library-categories"></div>
  <div class="library-results-heading"><h3 id="librarySelectedName">所有歌曲</h3><span id="libraryResultCount" class="muted"></span></div>
+ <div class="v34-page-size"><label for="v34PageSize">每頁顯示</label><select id="v34PageSize" onchange="v34SetPageSize(this.value)"><option value="10">10 首</option><option value="20" selected>20 首</option><option value="30">30 首</option><option value="50">50 首</option></select></div>
  <div id="songs" class="library-song-list"></div>
+ <div id="v34Pagination" class="v34-pagination" aria-label="歌曲分頁"></div>
  <div class="library-footer"><button onclick="newSong()">＋ 新增歌曲</button><input id="importFile" type="file" accept="application/json,.json" hidden onchange="v29ImportFile(this)"></div>
 </div>
 
@@ -148,14 +150,14 @@ body.view-edit #lines{padding-bottom:75px}
  <h2 id="editorTitle">新增歌曲</h2>
  <input id="title" placeholder="歌名"><input id="artist" placeholder="歌手">
  <input id="youtube" placeholder="YouTube 網址或 Video ID">
- <div class="v32-import-bar"><button type="button" class="secondary" onclick="v32PickPDF()">📄 匯入歌詞 PDF</button><span class="muted">可選用；仍可直接貼上歌詞</span><input id="v32PdfFile" type="file" accept="application/pdf,.pdf" hidden onchange="v32ImportPDF(this)"></div>
+ <div class="v32-import-bar"><button type="button" class="secondary" onclick="v32PickPDF()">📄 匯入歌詞 PDF</button><button type="button" class="secondary" onclick="v34PickImage()">▧ 圖片 OCR 匯入</button><span class="muted">亦可直接貼上歌詞</span><input id="v32PdfFile" type="file" accept="application/pdf,.pdf" hidden onchange="v32ImportPDF(this)"><input id="v34ImageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden onchange="v34ImportImage(this)"></div>
  <textarea id="lyrics" placeholder="貼上日文歌詞；一行視為一句，空白行會忽略"></textarea>
  <div id="editorCategories" class="category-picker"></div>
  <div class="row"><button onclick="saveSong()">儲存並開啟</button><button class="secondary" onclick="showHome()">取消</button></div>
 </div>
 
 <div id="play" class="hidden">
-<div id="viewBar"><button class="secondary" onclick="showHome()">← 歌曲庫</button><button class="secondary v33-settings-button" onclick="v33OpenSettings()" title="調整歌詞字體大小" aria-label="歌詞顯示設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5" fill="white"/><circle cx="16" cy="17" r="2.5" fill="white"/></svg><span>字體</span></button><button id="listenTab" onclick="setPlayerView('listen')">♫ 播放頁面</button><button id="editTab" class="secondary" onclick="setPlayerView('edit')">✎ 編輯頁面</button></div>
+<div id="viewBar"><button class="secondary" onclick="showHome()"><span class="v34-button-icon">←</span><span>歌曲庫</span></button><button class="secondary v33-settings-button" onclick="v33OpenSettings()" title="調整歌詞字體大小" aria-label="歌詞顯示設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5" fill="white"/><circle cx="16" cy="17" r="2.5" fill="white"/></svg><span>字體</span></button><button id="listenTab" onclick="setPlayerView('listen')"><span class="v34-button-icon">♫</span><span>播放</span></button><button id="editTab" class="secondary" onclick="setPlayerView('edit')"><span class="v34-button-icon">✎</span><span>編輯</span></button></div>
  <div class="toolbar row" id="editToolbar">
   <button onclick="toggleTiming()">半自動對時</button>
   <button class="secondary" onclick="shiftAll(-.1)">整首 −0.1s</button>
@@ -368,7 +370,7 @@ renderSongs();
 .inline-retime .row{justify-content:flex-start}
 </style>
 <script>
-/* V3.3 測試版 usability patch */
+/* V3.4 測試版 usability patch */
 let targetIndex=0, splitIndex=null;
 function lcsMap(oldLines,newTexts){const a=oldLines.map(x=>x.text),b=newTexts,n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);let i=0,j=0,map={};while(i<n&&j<m){if(a[i]===b[j]){map[j]=i;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}return map}
 saveSong=function(){let texts=$('lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!$('title').value.trim()||!texts.length){alert('請至少輸入歌名與歌詞');return}let old=current,map=old?lcsMap(old.lines,texts):{},used=new Set(),newLines=[];texts.forEach((t,i)=>{let oi=map[i],prev=oi!==undefined?old.lines[oi]:null;if(prev){used.add(oi);newLines.push({...prev,text:t});return}if(old){let c=old.lines.map((x,k)=>x.text===t&&!used.has(k)?k:-1).filter(k=>k>=0);if(c.length===1){used.add(c[0]);newLines.push({...old.lines[c[0]],text:t});return}}newLines.push({lineId:uid(),text:t,startTime:null,tokens:[{tokenId:'T1',text:t,reading:null,override:null}]})});let obj={schemaVersion:1,songId:old?.songId||'song_'+Date.now(),title:$('title').value.trim(),artist:$('artist').value.trim(),youtubeVideoId:videoId($('youtube').value),readingOverrides:old?.readingOverrides||{},lines:newLines};if(typeof saveEditorCategories==='function')saveEditorCategories(obj.songId);let ix=songs.findIndex(x=>x.songId===obj.songId);if(ix>=0)songs[ix]=obj;else songs.push(obj);save();openSong(obj.songId)};
@@ -391,7 +393,7 @@ let _shiftLine=shiftLine;shiftLine=function(i,d){_shiftLine(i,d);if(activePlayLi
 
 
 <script>
-/* V3.3 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
+/* V3.4 測試版: first-pass semi-auto timing is separate from completed-song maintenance. */
 let maintenanceIndex=null;
 
 function ensureMaintenanceHost(i){
@@ -528,7 +530,7 @@ status=function(){
 .timing-picker-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 <script>
-/* V3.3 測試版: semi-auto timing can be reused, with explicit start-line selection. */
+/* V3.4 測試版: semi-auto timing can be reused, with explicit start-line selection. */
 let semiAutoSelectedIndex=null;
 
 function closeSemiAutoPicker(){
@@ -609,7 +611,7 @@ markTarget=function(){
 .timing-timebox b{display:block;font-size:19px;margin-top:2px;font-variant-numeric:tabular-nums}
 </style>
 <script>
-/* V3.3 測試版: clearly separate stored lyric timestamp from live YouTube time. */
+/* V3.4 測試版: clearly separate stored lyric timestamp from live YouTube time. */
 let liveTimingTimer=null;
 
 function fmtPrecise(s){
@@ -708,7 +710,7 @@ toggleTiming=function(){
 .undo-disabled{opacity:.45;pointer-events:none}
 </style>
 <script>
-/* V3.3 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
+/* V3.4 測試版: safer mobile semi-auto timing — debounce + session-only undo. */
 let semiAutoUndoStack=[];
 let semiAutoLastMarkAt=0;
 const SEMI_AUTO_DEBOUNCE_MS=400;
@@ -839,7 +841,7 @@ toggleTiming=function(){
 .lyric-jump-no,.lyric-jump-time{font-variant-numeric:tabular-nums;color:#666}
 </style>
 <script>
-/* V3.3 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
+/* V3.4 測試版: semi-auto navigation — previous/next + tap center to choose any lyric. */
 function changeTimingTarget(delta){
   if(!timingMode||!current?.lines?.length)return;
   let ni=Math.max(0,Math.min(current.lines.length-1,targetIndex+delta));
@@ -1382,7 +1384,7 @@ v27RefreshCategoryFilter();renderSongs();
 /* V3.3 library UI only. Uses existing V2.7 category storage and song IDs. */
 let v28Selected='all';
 function v28CategorySelect(value){
- v28Selected=value;
+ v34ResetPage();v28Selected=value;
  const filter=$('categoryFilter');
  if([...filter.options].some(o=>o.value===value))filter.value=value;
  renderSongs();
@@ -1422,7 +1424,8 @@ renderSongs=function(){
   return (query?matchesQuery:matchesCategory);
  });
  $('libraryResultCount').textContent=matching.length+' 首歌曲';
- $('songs').innerHTML=matching.map(song=>`<div class="library-song"><button class="library-song-open" onclick="openSong('${song.songId}')"><span class="music-icon">♫</span><span class="library-song-info"><span class="library-song-title">${esc(song.title)}</span><span class="library-song-meta">${esc(song.artist||'未填歌手')} · ${song.lines.filter(x=>x.startTime!=null).length}/${song.lines.length} 句已對時</span></span></button><button class="library-song-menu" onclick="v28Menu('${song.songId}')" aria-label="管理歌曲 ${esc(song.title)}">⋯</button></div>`).join('')||'<p class="muted">沒有符合條件的歌曲。</p>';
+ const pageItems=typeof v34Paginate==='function'?v34Paginate(matching):matching;
+ $('songs').innerHTML=pageItems.map(song=>`<div class="library-song"><button class="library-song-open" onclick="openSong('${song.songId}')"><span class="music-icon">♫</span><span class="library-song-info"><span class="library-song-title">${esc(song.title)}</span><span class="library-song-meta">${esc(song.artist||'未填歌手')} · ${song.lines.filter(x=>x.startTime!=null).length}/${song.lines.length} 句已對時</span></span></button><button class="library-song-menu" onclick="v28Menu('${song.songId}')" aria-label="管理歌曲 ${esc(song.title)}">⋯</button></div>`).join('')||'<p class="muted">沒有符合條件的歌曲。</p>';
 };
 renderSongs();
 </script><style>
@@ -1731,5 +1734,96 @@ function v33OpenSettings(){
  document.body.appendChild(overlay);v33ApplySettings();
 }
 v33ApplySettings();
+</script>
+
+<style>
+/* V3.4: four compact, single-row navigation controls */
+#viewBar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex-wrap:nowrap;align-items:stretch}
+#viewBar button,#viewBar .v33-settings-button{min-width:0;width:100%;margin:0;padding:10px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;line-height:1.2;white-space:nowrap;min-height:62px;font-size:14px;flex:initial}
+#viewBar .v33-settings-button svg{width:19px;height:19px}
+.v34-button-icon{font-size:19px;line-height:1}
+.v34-page-size{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:6px 0 12px;font-size:13px;color:#555}
+.v34-page-size select{width:auto;padding:7px;border:1px solid #d9dce2;border-radius:9px;background:#fff;color:#222}
+.v34-pagination{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:7px;margin:18px 0 4px}
+.v34-pagination button{min-width:42px;min-height:42px;margin:0;padding:7px 10px}
+.v34-pagination button:disabled{opacity:.4;cursor:default}
+.v34-pagination .v34-page-label{font-size:13px;color:#555;min-width:90px;text-align:center}
+.v34-ocr-panel{background:white;color:#222;border-radius:15px;padding:18px;width:min(650px,100%);max-height:90vh;overflow:auto;box-sizing:border-box}
+.v34-ocr-panel h3{margin:0 0 10px}.v34-ocr-panel textarea{min-height:240px;font-size:15px;line-height:1.6}
+.v34-ocr-actions{display:flex;gap:8px;flex-wrap:wrap}.v34-ocr-actions button{flex:1}
+.v34-ocr-panel progress{width:100%;height:12px;margin:10px 0}
+@media(max-width:380px){#viewBar{gap:4px}#viewBar button,#viewBar .v33-settings-button{font-size:12px;min-height:59px;padding:8px 1px}}
+</style>
+<div id="v34OcrOverlay" class="furi-overlay hidden" role="dialog" aria-modal="true" aria-label="圖片歌詞辨識">
+ <div class="v34-ocr-panel"><h3>圖片 OCR 歌詞匯入</h3>
+ <div id="v34OcrStatus" class="muted">準備辨識</div><progress id="v34OcrProgress" max="100" value="0"></progress>
+ <p class="muted">支援單張長截圖。辨識結果可能含網站文字、錯字或畫面折行，請逐行校對；此功能需要網路下載辨識程式與日文模型，圖片在瀏覽器內處理。</p>
+ <textarea id="v34OcrPreview" placeholder="辨識結果會顯示於此，可直接編輯"></textarea>
+ <div class="v34-ocr-actions"><button id="v34OcrApply" onclick="v34ApplyOCR()" disabled>套用至歌曲編輯欄位</button><button class="secondary" onclick="v34CloseOCR()">取消</button></div>
+ </div>
+</div>
+<script>
+/* V3.4 pagination: display only; preserves original song order and storage. */
+const v34PageSizeKey='jpLibraryPageSizeV34';
+let v34Page=1;
+let v34PageSize=20;
+try{const n=Number(localStorage.getItem(v34PageSizeKey));if([10,20,30,50].includes(n))v34PageSize=n}catch(e){}
+function v34ResetPage(){v34Page=1}
+function v34SetPageSize(n){n=Number(n);if(![10,20,30,50].includes(n))return;v34PageSize=n;v34ResetPage();try{localStorage.setItem(v34PageSizeKey,String(n))}catch(e){}renderSongs()}
+function v34GoPage(n){v34Page=n;renderSongs();document.getElementById('librarySelectedName')?.scrollIntoView({block:'start',behavior:'smooth'})}
+function v34Paginate(matching){
+ const total=Math.max(1,Math.ceil(matching.length/v34PageSize));v34Page=Math.max(1,Math.min(v34Page,total));
+ const select=document.getElementById('v34PageSize');if(select)select.value=String(v34PageSize);
+ const nav=document.getElementById('v34Pagination');
+ if(nav){nav.innerHTML=matching.length>v34PageSize?`<button class="secondary" onclick="v34GoPage(1)" ${v34Page===1?'disabled':''} aria-label="第一頁">«</button><button class="secondary" onclick="v34GoPage(${v34Page-1})" ${v34Page===1?'disabled':''} aria-label="上一頁">‹</button><span class="v34-page-label">${v34Page} / ${total} 頁</span><button class="secondary" onclick="v34GoPage(${v34Page+1})" ${v34Page===total?'disabled':''} aria-label="下一頁">›</button><button class="secondary" onclick="v34GoPage(${total})" ${v34Page===total?'disabled':''} aria-label="最後一頁">»</button>`:''}
+ return matching.slice((v34Page-1)*v34PageSize,v34Page*v34PageSize);
+}
+/* V3.4 OCR: browser-side image processing, long screenshots sliced at native resolution. */
+let v34OcrBusy=false;
+function v34PickImage(){document.getElementById('v34ImageFile').click()}
+function v34CloseOCR(){if(v34OcrBusy){alert('辨識進行中，請等候完成。');return}document.getElementById('v34OcrOverlay').classList.add('hidden')}
+function v34LoadTesseract(){
+ if(window.Tesseract)return Promise.resolve(window.Tesseract);
+ return new Promise((resolve,reject)=>{
+  const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+  script.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(Error('OCR 程式無法載入'));
+  script.onerror=()=>reject(Error('OCR 程式下載失敗，請檢查網路連線'));document.head.appendChild(script);
+ });
+}
+async function v34ImportImage(input){
+ const file=input.files?.[0];input.value='';if(!file)return;
+ if(!/^image\/(png|jpeg|webp)$/.test(file.type)){alert('請選擇 JPG、PNG 或 WebP 圖片');return}
+ const overlay=document.getElementById('v34OcrOverlay'),status=document.getElementById('v34OcrStatus'),progress=document.getElementById('v34OcrProgress'),preview=document.getElementById('v34OcrPreview'),apply=document.getElementById('v34OcrApply');
+ overlay.classList.remove('hidden');preview.value='';progress.value=0;apply.disabled=true;v34OcrBusy=true;
+ let worker=null,bitmap=null;
+ try{
+  status.textContent='載入日文辨識程式與模型中…';const T=await v34LoadTesseract();
+  worker=await T.createWorker('jpn',1,{logger:m=>{if(m.status==='recognizing text')progress.value=Math.max(progress.value,Math.round((m.progress||0)*100))}});
+  bitmap=await createImageBitmap(file);const width=bitmap.width,height=bitmap.height;
+  if(width<200||height<100)throw Error('圖片解析度過低');
+  const maxSlice=1250,overlap=0;const parts=[];
+  const count=Math.ceil(height/maxSlice);
+  for(let i=0;i<count;i++){
+   const y=i*maxSlice,h=Math.min(maxSlice,height-y);status.textContent=`辨識第 ${i+1} / ${count} 區（${width} × ${height}）…`;
+   const canvas=document.createElement('canvas');canvas.width=width;canvas.height=h;
+   canvas.getContext('2d',{willReadFrequently:true}).drawImage(bitmap,0,y,width,h,0,0,width,h);
+   const result=await worker.recognize(canvas);
+   let text=result.data.text||'';
+   // Preserve OCR's original lines for manual verification; avoid speculative automatic merges.
+   parts.push(text.trim());progress.value=Math.round((i+1)/count*100);
+   canvas.width=canvas.height=0;
+  }
+  preview.value=parts.filter(Boolean).join('\n');
+  if(!preview.value.trim())throw Error('未辨識出文字，請換一張清晰截圖');
+  status.textContent='辨識完成。請刪除網址列、網站按鈕等非歌詞文字，並檢查日文錯字及手機畫面折行。';apply.disabled=false;
+ }catch(e){status.textContent='辨識失敗：'+(e?.message||e)+'。原本歌曲資料未變更。'}
+ finally{v34OcrBusy=false;if(worker)try{await worker.terminate()}catch(e){}if(bitmap)bitmap.close()}
+}
+function v34ApplyOCR(){
+ const lyrics=document.getElementById('v34OcrPreview').value.trim();if(!lyrics){alert('沒有可匯入的歌詞');return}
+ const target=document.getElementById('lyrics');if(target.value.trim()&&!confirm('目前編輯欄位已有歌詞，確定要用圖片辨識結果取代嗎？'))return;
+ target.value=lyrics;v34CloseOCR();target.scrollIntoView({block:'center',behavior:'smooth'});
+}
+renderSongs();
 </script>
 </body></html>

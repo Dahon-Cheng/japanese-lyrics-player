@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V3.5.5 測試版</title>
+<title>日文同步歌詞 V3.5.6 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -165,7 +165,7 @@ body>h1{padding-right:105px;min-height:40px;display:flex;align-items:center}
 </head>
 <body>
 <button type="button" id="v350ThemeToggle" aria-label="切換深色或淺色模式" onclick="v350ToggleTheme()">☾ 深色</button>
-<h1>日文同步歌詞播放器 V3.5.5 測試版</h1>
+<h1>日文同步歌詞播放器 V3.5.6 測試版</h1>
 
 <div id="home" class="card home-library">
  <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/><path d="M17 16h6M20 13v6"/></svg></button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3"/><path d="M17 17v6m-3-3 3 3 3-3"/></svg></button></div></div>
@@ -951,7 +951,7 @@ function v19Hi(i,scroll=true){let r=v19Rows();if(i===playbackActiveIndex && r[i]
 function v19Tick(){if(timingMode||!current||!player?.getCurrentTime)return;v19Hi(v19Index((+player.getCurrentTime()||0)+v26Lead),true);}
 playbackSyncTimer=setInterval(v19Tick,50);
 /* V3.5.5: ignore furigana tokens here: this document capture listener runs before the token editor's #lines capture listener. */
-document.addEventListener('click',e=>{if(timingMode||!current||!player?.seekTo||e.target.closest('button,input,textarea,select,a,.furi-token[data-furi-line]'))return;let r=v19Rows(),row=e.target.closest('.lyric-row,.line,.lyric'),i=r.indexOf(row);if(i<0)return;let st=current.lines[i]?.startTime;if(st==null)return;player.seekTo(+st,true);player.playVideo?.();playbackActiveIndex=-1;v19Hi(i,true);},true);
+document.addEventListener('click',e=>{if(timingMode||!current||!player?.seekTo||e.target.closest('button,input,textarea,select,a,.furi-token[data-furi-line],.v356-unknown-kanji[data-furi-char]'))return;let r=v19Rows(),row=e.target.closest('.lyric-row,.line,.lyric'),i=r.indexOf(row);if(i<0)return;let st=current.lines[i]?.startTime;if(st==null)return;player.seekTo(+st,true);player.playVideo?.();playbackActiveIndex=-1;v19Hi(i,true);},true);
 let _v19Status=status;status=function(){_v19Status();if(!timingMode){playbackActiveIndex=-1;setTimeout(v19Tick,0);}};
 </script>
 
@@ -1116,6 +1116,11 @@ async function analyzeFurigana(){
   for(const [oi,ni] of pairs){
    const prev=previous[oi].tokens||[],next=result[ni].tokens;
    for(const [a,b] of furiLcs(prev,next,t=>t.surface)){if(prev[a].once!==undefined){next[b].once=prev[a].once;kept++}}
+  }
+  // V3.5.6: retain manual character readings when analyzing the same lyric again.
+  for(const line of result){
+   const prior=(old?.lines||[]).find(x=>x.lineId===line.lineId&&x.text===line.text);
+   if(prior?.manualChars)line.manualChars={...prior.manualChars};
   }
   furiRecords={lines:result,all:{...(old?.all||{})}};
   furiPut();furiMode='ruby';$('furiMode').value='ruby';renderLines();if(!$('fineTiming').classList.contains('hidden'))renderFine();
@@ -2205,6 +2210,108 @@ body.view-edit #lines .editline>button{font-size:clamp(12px,3.5vw,16px)!importan
  search.addEventListener('focus',()=>{if(getView()==='home'&&search.value==='')history.replaceState(entry(snapshot()),'',location.href)});
 })();
 </script>
+<style>
+/* V3.5.6: unknown kanji are editable without affecting lyric playback. */
+body.view-edit #lines .v356-unknown-kanji, #fineLines .v356-unknown-kanji {
+  cursor:pointer; border-bottom:1px dashed #e4a45c; touch-action:manipulation;
+}
+body.view-listen #lines .v356-unknown-kanji {border-bottom:0;pointer-events:none;cursor:inherit}
+</style>
+<script>
+/* V3.5.6: The tokenizer may leave some source kanji outside editable token
+   wrappers. Decorate those source characters directly, without reconstructing
+   or altering the original lyric, its timestamps, or the tokenizer tokens. */
+(function(){
+  const isKanji = ch => /[\u3400-\u9fff\uF900-\uFAFF\u{20000}-\u{2FA1F}々〆ヶ]/u.test(ch);
+  const originalFuriText = furiText;
+  const manualFor = line => {
+    let record = furiRecord(line);
+    if(!record){
+      record={lineId:line.lineId,text:line.text,tokens:[],manualChars:{}};
+      if(!furiRecords)furiRecords={lines:[],all:{}};
+      if(!Array.isArray(furiRecords.lines))furiRecords.lines=[];
+      furiRecords.lines.push(record);
+    }
+    if(!record.manualChars)record.manualChars={};
+    return record;
+  };
+  function decorate(line,markup){
+    if(furiMode!=='ruby')return markup;
+    const template=document.createElement('template');
+    template.innerHTML=markup;
+    const record=furiRecord(line), saved=record?.manualChars||{};
+    let offset=0;
+    // Iterate source text nodes in DOM order. Ruby readings (rt) are annotations,
+    // not source text, so never count them toward source offsets.
+    const walker=document.createTreeWalker(template.content,NodeFilter.SHOW_TEXT);
+    const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+    for(const node of nodes){
+      if(node.parentElement?.closest('rt,rp'))continue;
+      const chars=Array.from(node.nodeValue||'');
+      const insideToken=!!node.parentElement?.closest('.furi-token');
+      if(insideToken){offset+=chars.length;continue}
+      const frag=document.createDocumentFragment();let changed=false;
+      for(const ch of chars){
+        const pos=offset++;
+        if(!isKanji(ch)){frag.appendChild(document.createTextNode(ch));continue}
+        changed=true;
+        const span=document.createElement('span');
+        span.className='v356-unknown-kanji';
+        span.dataset.furiLine=line.lineId;
+        span.dataset.furiChar=String(pos);
+        const reading=saved[pos];
+        if(reading){const ruby=document.createElement('ruby');ruby.appendChild(document.createTextNode(ch));const rt=document.createElement('rt');rt.textContent=reading;ruby.appendChild(rt);span.appendChild(ruby)}
+        else span.textContent=ch;
+        frag.appendChild(span);
+      }
+      if(changed)node.replaceWith(frag);
+    }
+    return template.innerHTML;
+  }
+  window.furiText=function(line,index){return decorate(line,originalFuriText(line,index))};
+  // furiText is resolved at runtime by renderText; no song-data migration needed.
+  function editMissing(lineId,position){
+    const line=current?.lines?.find(l=>l.lineId===lineId);
+    if(!line)return;
+    const chars=Array.from(line.text),ch=chars[position];
+    if(!ch||!isKanji(ch))return;
+    const record=manualFor(line),previous=record.manualChars[position]||'';
+    const overlay=document.createElement('div');overlay.className='furi-overlay';
+    const panel=document.createElement('div');panel.className='furi-dialog';
+    panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
+    const heading=document.createElement('h3');heading.textContent='補上漢字讀音：'+ch;panel.appendChild(heading);
+    const note=document.createElement('p');note.textContent='這個漢字尚未建立可編輯的自動讀音。可以手動輸入平假名。';panel.appendChild(note);
+    const label=document.createElement('label');label.textContent='平假名讀音';
+    const input=document.createElement('input');input.type='text';input.value=previous;label.appendChild(input);panel.appendChild(label);
+    const actions=document.createElement('div');actions.className='row';
+    const save=document.createElement('button');save.textContent='儲存';
+    const clear=document.createElement('button');clear.className='secondary';clear.textContent='清除手動讀音';
+    const cancel=document.createElement('button');cancel.className='secondary';cancel.textContent='取消';
+    actions.append(save,clear,cancel);panel.appendChild(actions);overlay.appendChild(panel);document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    const refresh=()=>{furiPut();renderLines();if(!$('fineTiming').classList.contains('hidden'))renderFine();close()};
+    save.onclick=()=>{const v=furiHira(input.value.trim());if(!v){alert('請輸入平假名讀音');return}record.manualChars[position]=v;refresh()};
+    clear.onclick=()=>{delete record.manualChars[position];refresh()};
+    cancel.onclick=close;overlay.onclick=e=>{if(e.target===overlay)close()};
+    input.focus();
+  }
+  // Handle unknown-kanji clicks before the document-level seek/play handler.
+  // The document handler must explicitly skip this new editor target.
+  $('lines').addEventListener('click',e=>{
+    const target=e.target.closest('.v356-unknown-kanji[data-furi-char]');
+    if(!target||playerView!=='edit')return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    editMissing(target.dataset.furiLine,Number(target.dataset.furiChar));
+  },true);
+  $('fineLines').addEventListener('click',e=>{
+    const target=e.target.closest('.v356-unknown-kanji[data-furi-char]');
+    if(!target)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    editMissing(target.dataset.furiLine,Number(target.dataset.furiChar));
+  },true);
+})();
+</script>
+
 </body></html>
 <script>
 /* V3.4.3: timestamp-safe lyric edits. No changes to the song storage schema. */

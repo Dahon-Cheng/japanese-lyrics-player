@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V3.5.1 測試版</title>
+<title>日文同步歌詞 V3.5.2 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -165,7 +165,7 @@ body>h1{padding-right:105px;min-height:40px;display:flex;align-items:center}
 </head>
 <body>
 <button type="button" id="v350ThemeToggle" aria-label="切換深色或淺色模式" onclick="v350ToggleTheme()">☾ 深色</button>
-<h1>日文同步歌詞播放器 V3.5.1 測試版</h1>
+<h1>日文同步歌詞播放器 V3.5.2 測試版</h1>
 
 <div id="home" class="card home-library">
  <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/><path d="M17 16h6M20 13v6"/></svg></button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3"/><path d="M17 17v6m-3-3 3 3 3-3"/></svg></button></div></div>
@@ -2144,6 +2144,64 @@ body.view-edit #lines .editline>button{font-size:clamp(12px,3.5vw,16px)!importan
  // Other code paths open the editor/player directly; keep the floating button home-only.
  new MutationObserver(updateFAB).observe(home,{attributes:true,attributeFilter:['class']});
  renderSongs();updateFAB();
+})();
+</script>
+<script>
+/* V3.5.2: Android/browser Back navigation for the single-page lyrics app.
+   History entries contain navigation metadata only; song data is unchanged. */
+(function(){
+ const KEY='jpLyricsNavV352';
+ let restoring=false;
+ const getView=()=>!document.getElementById('editor').classList.contains('hidden')?'editor':!document.getElementById('play').classList.contains('hidden')?'song':'home';
+ const snapshot=()=>({view:getView(),folder:window.v28Selected||'all',inResults:!document.getElementById('v351Back').classList.contains('hidden'),search:document.getElementById('search').value||'',songId:current?.songId||null,editExisting:!!current});
+ const entry=(data)=>({...(history.state&&typeof history.state==='object'?history.state:{}),[KEY]:data});
+ const record=()=>{if(!restoring)history.pushState(entry(snapshot()),'',location.href)};
+ const initial={view:'home',folder:'all',inResults:false,search:'',songId:null,editExisting:false};
+ // The first Back from the initial screen must still exit to the previous website.
+ history.replaceState(entry(initial),'',location.href);
+ const wrap=(name)=>{
+  const old=window[name];if(typeof old!=='function')return;
+  window[name]=function(...args){const result=old.apply(this,args);record();return result};
+ };
+ // Keep the folder selection in the history, including all-songs and uncategorized.
+ wrap('v28CategorySelect');
+ wrap('v351BackToFolders');
+ wrap('openSong');
+ wrap('newSong');
+ wrap('v351AddSong');
+ wrap('editCurrent');
+ wrap('showHome');
+ function restore(state){
+  if(!state)return;
+  restoring=true;
+  try{
+   const search=document.getElementById('search');
+   if(state.view==='home'){
+    window.showHome();
+    if(state.inResults)window.v28CategorySelect(state.folder||'all');
+    else window.v351BackToFolders();
+    search.value=state.search||'';
+    renderSongs();
+   }else if(state.view==='song'&&state.songId&&songs.some(x=>x.songId===state.songId)){
+    window.openSong(state.songId);
+   }else if(state.view==='editor'){
+    if(state.editExisting&&state.songId&&songs.some(x=>x.songId===state.songId)){
+     window.openSong(state.songId);
+     window.editCurrent();
+    }else{
+     window.showHome();
+     window.newSong();
+    }
+   }else window.showHome();
+  }finally{restoring=false}
+ }
+ window.addEventListener('popstate',e=>{
+  const state=e.state?.[KEY];
+  if(state)restore(state);
+ });
+ // The search box switches to results without a folder click; record once per search session.
+ const search=document.getElementById('search');
+ search.addEventListener('focus',()=>{if(getView()==='home'&&search.value==='')history.replaceState(entry(snapshot()),'',location.href)});
 })();
 </script>
 </body></html>

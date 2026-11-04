@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>日文同步歌詞 V3.4.9 測試版</title>
+<title>日文同步歌詞 V3.5.0 測試版</title>
 <style>
 body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;max-width:920px;margin:auto;padding:18px;background:#f6f7f9;color:#222}
 h1{font-size:22px}.card{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
@@ -134,9 +134,38 @@ body.view-edit #lines{padding-bottom:75px}
 .v33-settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .v33-settings-actions button{flex:1}
 @media(max-width:600px){#viewBar .v33-settings-button{min-width:42px;padding:9px}}
-</style></head>
+</style>
+<style id="v350ThemeStyles">
+/* V3.5.0 unified PDF-tool inspired theme; presentation only. */
+:root{--ui-bg:#f3f5f8;--ui-card:#fff;--ui-card2:#edf1f6;--ui-text:#202733;--ui-muted:#68778a;--ui-line:#dce2eb;--ui-btn:#25364b;--ui-btn-text:#fff;--ui-soft:#e5eaf1;--ui-accent:#356fa8;--ui-active:#e2edfc;--ui-shadow:0 4px 18px #182a4310}
+html[data-jp-theme="dark"]{color-scheme:dark;--ui-bg:#151b24;--ui-card:#202a36;--ui-card2:#293544;--ui-text:#edf3fb;--ui-muted:#a4b3c5;--ui-line:#394758;--ui-btn:#3a628d;--ui-btn-text:#f6f9ff;--ui-soft:#354254;--ui-accent:#8cbcf5;--ui-active:#294664;--ui-shadow:0 4px 18px #0005}
+body{background:var(--ui-bg)!important;color:var(--ui-text)!important}
+.card,.home-library,.toolbar,.timing-actions{background:var(--ui-card)!important;color:var(--ui-text)!important;box-shadow:var(--ui-shadow)}
+.card{border:1px solid var(--ui-line)}
+h1,h2,h3,.library-category,.library-song-open,.library-song-title{color:var(--ui-text)!important}
+.muted,.hint,.timing-label,.timing-prev,.timing-next,.library-category .category-count,.library-category .category-icon,.library-category .category-arrow,.library-song-meta,.library-song-open .music-icon,.song .song-tags,.v34-page-size,.v34-pagination .v34-page-label{color:var(--ui-muted)!important}
+button{background:var(--ui-btn);color:var(--ui-btn-text)}
+button.secondary,.secondary{background:var(--ui-soft)!important;color:var(--ui-text)!important}
+button.danger{background:#a83737!important;color:white!important}
+input,textarea,select{background:var(--ui-card2);color:var(--ui-text);border-color:var(--ui-line)}
+input::placeholder,textarea::placeholder{color:var(--ui-muted)}
+.home-library #search,.library-song,.library-category.selected,.category-picker label{background:var(--ui-card2)!important;color:var(--ui-text)!important}
+.library-category{background:transparent!important}
+.library-results-heading,.song,.line,.timing-current{border-color:var(--ui-line)!important}
+.line.active,body.view-listen #lines .line.active{background:var(--ui-active)!important;color:var(--ui-text)}
+#viewBar button{border:1px solid var(--ui-line)}
+.furi-dialog,.v33-settings-panel,.v34-ocr-panel,.v344split-dialog,.v345space-dialog{background:var(--ui-card)!important;color:var(--ui-text)!important;border:1px solid var(--ui-line)}
+.furi-dialog input[type=text]{background:var(--ui-card2);color:var(--ui-text)}
+.furi-dialog .category-picker label{color:var(--ui-text)!important}
+.v34-page-size select{background:var(--ui-card2);color:var(--ui-text);border-color:var(--ui-line)}
+#v350ThemeToggle{position:fixed;right:14px;top:12px;z-index:1001;min-height:39px;padding:8px 12px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-card2);color:var(--ui-text);box-shadow:0 2px 10px #0002;font-size:13px;font-weight:650}
+body>h1{padding-right:105px;min-height:40px;display:flex;align-items:center}
+@media(max-width:600px){#v350ThemeToggle{right:10px;top:10px;padding:7px 9px;font-size:12px}body>h1{font-size:18px;padding-right:90px}}
+</style>
+</head>
 <body>
-<h1>日文同步歌詞播放器 V3.4.9 測試版</h1>
+<button type="button" id="v350ThemeToggle" aria-label="切換深色或淺色模式" onclick="v350ToggleTheme()">☾ 深色</button>
+<h1>日文同步歌詞播放器 V3.5.0 測試版</h1>
 
 <div id="home" class="card home-library">
  <div class="library-heading"><h2>我的歌曲庫</h2><div class="library-top-actions"><button class="secondary icon-btn" onclick="addCategory()" title="新增分類" aria-label="新增分類"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9"/><path d="M17 16h6M20 13v6"/></svg></button><button class="secondary icon-btn" onclick="v29BackupMenu()" title="完整備份／還原" aria-label="完整備份／還原"><svg class="library-action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3"/><path d="M17 17v6m-3-3 3 3 3-3"/></svg></button></div></div>
@@ -992,7 +1021,7 @@ function furiRubyMixed(surface,reading){
  return html;
 }
 
-/* V3.4.9: render ruby over the exact source text, never reconstruct the lyric
+/* V3.5.0: render ruby over the exact source text, never reconstruct the lyric
    from tokenizer surfaces. Spaces in the original text are preserved verbatim. */
 function furiText(line,index){
  if(furiMode==='original')return esc(line.text);
@@ -2016,6 +2045,22 @@ body.view-edit #lines .editline>button{font-size:clamp(12px,3.5vw,16px)!importan
 })();
 </script>
 
+
+<script id="v350ThemeScript">
+(function(){
+ const key='jpLyricsUiThemeV350';
+ let theme='light';
+ try{theme=localStorage.getItem(key)==='dark'?'dark':'light'}catch(e){}
+ function apply(next){
+  theme=next==='dark'?'dark':'light';
+  document.documentElement.setAttribute('data-jp-theme',theme);
+  const btn=document.getElementById('v350ThemeToggle');
+  if(btn){btn.textContent=theme==='dark'?'☀ 淺色':'☾ 深色';btn.setAttribute('aria-pressed',String(theme==='dark'));}
+ }
+ window.v350ToggleTheme=function(){apply(theme==='dark'?'light':'dark');try{localStorage.setItem(key,theme)}catch(e){}};
+ apply(theme);
+})();
+</script>
 </body></html>
 <script>
 /* V3.4.3: timestamp-safe lyric edits. No changes to the song storage schema. */
